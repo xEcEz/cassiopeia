@@ -358,6 +358,7 @@ class Role(Enum):
     middle = "MIDDLE"
     adc = "DUO_CARRY"
     support = "DUO_SUPPORT"
+    none = "NONE"
 
     def from_match_naming_scheme(string: str):
         return {
