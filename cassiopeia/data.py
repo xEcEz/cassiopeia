@@ -176,6 +176,13 @@ class Tier(Enum):
     bronze = "BRONZE"
     unranked = "UNRANKED"
 
+    @classmethod
+    def from_int(cls, value):
+        if value in range(0, 8):
+            return cls(cls._inverted_order()[value])
+        else:
+            raise ValueError('Corresponding tier does not exist')
+
     def __str__(self):
         return self.name.title()
 
@@ -183,6 +190,11 @@ class Tier(Enum):
     def _order():
         return {Tier.challenger: 7, Tier.master: 6, Tier.diamond: 5,
                 Tier.platinum: 4, Tier.gold: 3, Tier.silver: 2, Tier.bronze: 1}
+
+    @staticmethod
+    def _inverted_order():
+        return {7: Tier.challenger, 6: Tier.master, 5: Tier.diamond,
+                4: Tier.platinum, 3: Tier.gold, 2: Tier.silver, 1: Tier.bronze}
 
     def __lt__(self, other):
         return self._order()[self] < other._order()[other]
@@ -195,6 +207,20 @@ class Tier(Enum):
 
     def __ge__(self, other):
         return self._order()[self] >= other._order()[other]
+
+    def pred(self):
+        value = self._order()[self]
+        if value > 1:
+            return Tier(self.from_int(value - 1))
+        else:
+            raise ValueError(self.value + ' has no predecessor')
+
+    def succ(self):
+        value = self._order()[self]
+        if value < 7:
+            return Tier(self.from_int(value + 1))
+        else:
+            raise ValueError(self.value + ' has no successor')
 
 
 class Division(Enum):
@@ -332,6 +358,7 @@ class Role(Enum):
     middle = "MIDDLE"
     adc = "DUO_CARRY"
     support = "DUO_SUPPORT"
+    none = "NONE"
 
     def from_match_naming_scheme(string: str):
         return {
