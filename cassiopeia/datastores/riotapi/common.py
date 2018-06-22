@@ -280,7 +280,11 @@ class RiotAPIRequest(object):
                 # Create a new handler
                 new_handler = self.service._handlers[429][rate_limiting_type]()  # type: FailedRequestHandler
             else:
-                new_handler = self.service._handlers[error.code]()
+                try:
+                    new_handler = self.service._handlers[error.code]()
+                except KeyError:
+                    new_handler = None
+                    print('error: unexpected response code')
 
             # If we will handle the new error in the same way as we did previously, don't use a new instance
             for handler in handlers:
@@ -288,7 +292,7 @@ class RiotAPIRequest(object):
                     new_handler = handler
                     break
 
-            if new_handler.stop:
+            if new_handler is None or new_handler.stop:
                 raise error
             else:
                 try:
@@ -345,6 +349,9 @@ class RetryFromHeaders(object):
             raise error
         backoff = int(error.response_headers["Retry-After"])
         print("INFO: Unexpected {} rate limit, backing off for {} seconds (from headers).".format(headers.get('X-Rate-Limit-Type', 'service'), backoff))
+        print("Requester: " + str(url))
+        print("X-App-Rate-Limit: " + error.response_headers["X-App-Rate-Limit-Count"] + "/" + error.response_headers["X-App-Rate-Limit"])
+        print("X-Method-Rate-Limit: " + error.response_headers["X-Method-Rate-Limit-Count"] + "/" + error.response_headers["X-Method-Rate-Limit"])
         time.sleep(backoff)
         for rate_limiter in rate_limiters:
             rate_limiter.restrict_for(backoff)
