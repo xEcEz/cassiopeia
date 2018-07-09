@@ -4,4 +4,4 @@ merakicommons
 datapipelines
 Pillow
 arrow
-orderedset
+requests
