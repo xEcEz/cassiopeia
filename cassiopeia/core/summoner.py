@@ -112,21 +112,17 @@ class Summoner(CassiopeiaGhost):
             return self.id == other.id
 
     def __str__(self):
-        s = "<Summoner id={id}, account={{account}}, name={{name}}>"
+        id_ = "?"
+        name = "?"
+        if hasattr(self._data[SummonerData], "id"):
+            id_ = self.id
+        if hasattr(self._data[SummonerData], "name"):
+            name = self.name
         try:
-            s = s.format(id=self._data[SummonerData].id)
+            account = self._data[SummonerData].account.id
         except AttributeError:
-            s = s.format(id="?")
-        s = s.replace("{name}", "{{name}}")
-        try:
-            s = s.format(account=self._data[SummonerData].account.id)
-        except AttributeError:
-            s = s.format(account="?")
-        try:
-            s = s.format(name=self._data[SummonerData].name)
-        except AttributeError:
-            s = s.format(name="?")
-        return s
+            account = "?"
+        return "Summoner(id={id_}, account={account}, name='{name}')".format(id_=id_, name=name, account=account)
 
     @property
     def exists(self):
@@ -219,7 +215,7 @@ class Summoner(CassiopeiaGhost):
     @lazy_property
     def rank_last_season(self):
         most_recent_match = self.match_history[0]
-        return most_recent_match.participants[self.name].rankLastSeason
+        return most_recent_match.participants[self.name].rank_last_season
 
     @property
     def verification_string(self) -> str:
