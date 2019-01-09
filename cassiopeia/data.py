@@ -130,6 +130,13 @@ class Side(Enum):
     blue = 100
     red = 200
 
+    @staticmethod
+    def from_id(i: int):
+        return {
+            100: Side.blue,
+            200: Side.red
+        }[i]
+
 
 class GameMode(Enum):
     aram = "ARAM"
@@ -155,6 +162,7 @@ class GameMode(Enum):
     all_random_urf_snow = "SNOWURF"
     practice_tool = "PRACTICETOOL"
     nexus_blitz = "GAMEMODEX"
+    odyssey = "ODYSSEY"
 
 
 class MasteryTree(Enum):
@@ -173,13 +181,15 @@ class RunePath(Enum):
 
 class Tier(Enum):
     challenger = "CHALLENGER"
+    grandmaster = "GRANDMASTER"
     master = "MASTER"
     diamond = "DIAMOND"
     platinum = "PLATINUM"
     gold = "GOLD"
     silver = "SILVER"
     bronze = "BRONZE"
-    unranked = "UNRANKED"
+    iron = "IRON"
+    provisional = "PROVISIONAL"
 
     @classmethod
     def from_int(cls, value):
@@ -254,6 +264,15 @@ class Division(Enum):
     def __ge__(self, other):
         return self._order()[self] >= other._order()[other]
 
+    def get_literal(self):
+        return {
+            Division.one: 'one',
+            Division.two: 'two',
+            Division.three: 'three',
+            Division.four: 'four',
+            Division.five: 'five',
+        }[self]
+
 
 class Rank:
     def __init__(self, tier: Tier, division: Division):
@@ -296,6 +315,8 @@ class Season(Enum):
     season_7 = "SEASON2017"
     preseason_8 = "PRESEASON2018"
     season_8 = "SEASON2018"
+    preseason_9 = "PRESEASON2019"
+    season_9 = "SEASON2019"
 
     @property
     def id(self):
@@ -331,7 +352,9 @@ SEASON_IDS = {
     Season.preseason_7: 8,
     Season.season_7: 9,
     Season.preseason_8: 10,
-    Season.season_8: 11
+    Season.season_8: 11,
+    Season.preseason_9: 12,
+    Season.season_9: 13
 }
 
 
@@ -355,6 +378,120 @@ class Lane(Enum):
             "JUNGLE": Lane.jungle,
             "NONE": None
         }[string]
+
+
+class SummonersRiftArea(Enum):
+    none = "NONE"
+    nexus_blue = "NEXUS_BLUE"
+    nexus_red = "NEXUS_RED"
+    top_lane_blue = "TOP_LANE_BLUE"
+    top_lane_purple = "TOP_LANE_PURPLE"
+    top_lane_red = "TOP_LANE_RED"
+    mid_lane_blue = "MID_LANE_BLUE"
+    mid_lane_purple = "MID_LANE_PURPLE"
+    mid_lane_red = "MID_LANE_RED"
+    bot_lane_blue = "BOT_LANE_BLUE"
+    bot_lane_purple = "BOT_LANE_PURPLE"
+    bot_lane_red = "BOT_LANE_RED"
+    jungle_top_blue = "JUNGLE_TOP_BLUE"
+    jungle_top_red = "JUNGLE_TOP_RED"
+    jungle_bot_blue = "JUNGLE_BOT_BLUE"
+    jungle_bot_red = "JUNGLE_BOT_RED"
+    river_top = "RIVER_TOP"
+    river_bot = "RIVER_BOT"
+
+    def get_side(self):
+        if "BLUE" in self.value:
+            return Side.blue
+        elif "RED" in self.value:
+            return Side.red
+        else:
+            return None
+
+    def get_lane(self):
+        if "TOP" in self.value:
+            return Lane.top_lane
+        elif "MID" in self.value:
+            return Lane.mid_lane
+        elif "BOT" in self.value:
+            return Lane.bot_lane
+        elif "JUNGLE" in self.value:
+            return Lane.jungle
+        else:
+            return None
+
+    @staticmethod
+    def from_position(position: "Position") -> "SummonersRiftArea":
+        x, y = position.x, position.y
+
+        # Load the map if it isn't already loaded
+        try:
+            map = SummonersRiftArea.__map
+        except AttributeError:
+            import os
+            from PIL import Image
+            script_dir = os.path.dirname(__file__)
+            rel_path = './resources/summonersRiftAreas.png'
+            map = Image.open(os.path.join(script_dir, rel_path))
+            SummonersRiftArea.__map_size = map.size
+            map = map.load()
+            SummonersRiftArea.__map = map
+        image_width, image_height = SummonersRiftArea.__map_size
+
+        min_x = -120
+        min_y = -120
+        max_x = 14870
+        max_y = 14980
+        width = max_x - min_x
+        height = max_y - min_y
+        x = round((x - min_x) / width * (image_width - 1))
+        y = round(abs(y - min_y - height) / height * (image_height - 1))
+        rgb = map[x, y][0]
+
+        color_mapping = {
+            0: SummonersRiftArea.none,
+            10: SummonersRiftArea.nexus_blue,
+            20: SummonersRiftArea.nexus_red,
+            30: SummonersRiftArea.top_lane_blue,
+            40: SummonersRiftArea.top_lane_purple,
+            50: SummonersRiftArea.top_lane_red,
+            60: SummonersRiftArea.mid_lane_blue,
+            70: SummonersRiftArea.mid_lane_purple,
+            80: SummonersRiftArea.mid_lane_red,
+            90: SummonersRiftArea.bot_lane_blue,
+            100: SummonersRiftArea.bot_lane_purple,
+            110: SummonersRiftArea.bot_lane_red,
+            120: SummonersRiftArea.jungle_top_blue,
+            130: SummonersRiftArea.jungle_top_red,
+            140: SummonersRiftArea.jungle_bot_blue,
+            150: SummonersRiftArea.jungle_bot_red,
+            160: SummonersRiftArea.river_top,
+            170: SummonersRiftArea.river_bot
+        }
+        return color_mapping.get(rgb, SummonersRiftArea.none)
+
+    @staticmethod
+    def get_granular_pos(position: "Position") -> "Position":
+        x, y = position.x, position.y
+
+        try:
+            trigger = SummonersRiftArea.__min_x
+        except AttributeError:
+            SummonersRiftArea.__min_x = -120
+            SummonersRiftArea.__min_y = -120
+            SummonersRiftArea.__max_x = 14870
+            SummonersRiftArea.__max_y = 14980
+            SummonersRiftArea.__pos_granularity = 25
+            SummonersRiftArea.__width = SummonersRiftArea.__max_x - SummonersRiftArea.__min_x
+            SummonersRiftArea.__height = SummonersRiftArea.__max_y - SummonersRiftArea.__min_y
+            SummonersRiftArea.__width = SummonersRiftArea.__max_x - SummonersRiftArea.__min_x
+            SummonersRiftArea.__height = SummonersRiftArea.__max_y - SummonersRiftArea.__min_y
+
+        x_pos = round(
+            (x - SummonersRiftArea.__min_x) / SummonersRiftArea.__width * (SummonersRiftArea.__pos_granularity - 1))
+        y_pos = round(abs(y - SummonersRiftArea.__min_y - SummonersRiftArea.__height) / SummonersRiftArea.__height * (
+                    SummonersRiftArea.__pos_granularity - 1))
+        return {'x': x_pos, 'y': y_pos}
 
 
 class Role(Enum):
@@ -384,14 +521,21 @@ class Queue(Enum):
     deprecated_coop_ai_fives = "BOT_5x5"  # 7
     deprecated_blind_threes = "NORMAL_3x3"  # 8
     deprecated_ranked_premade_threes = "RANKED_PREMADE_3x3"  # 9
-    deprecated_ranked_flex_threes = "RANKED_FLEX_TT_DEPRECATED"  # 9  # There are two different queue names with ID 9... This one was replaced with queue 470. There is therefore no corresponding queue with ID 9 for this Queue, and instead the Queue with ID 470 will be used when this name is requested, even for very old games. In addition, there are two queues with the name "RANKED_FLEX_TT"; in order to avoid a name conflict, we renamed this one.
+    deprecated_ranked_flex_threes = "RANKED_FLEX_TT_DEPRECATED"  # 9  # There are two different queue names with ID
+    # 9... This one was replaced with queue 470. There is therefore no corresponding queue with ID 9 for this Queue,
+    # and instead the Queue with ID 470 will be used when this name is requested, even for very old games. In
+    # addition, there are two queues with the name "RANKED_FLEX_TT"; in order to avoid a name conflict, we renamed
+    # this one.
     deprecated_draft_fives = "NORMAL_5x5_DRAFT"  # 14
     deprecated_blind_dominion = "ODIN_5x5_BLIND"  # 16
     deprecated_draft_dominion = "ODIN_5x5_DRAFT"  # 17
     deprecated_coop_ai_dominion = "BOT_ODIN_5x5"  # 25
-    deprecated_coop_ai_intro_fives = "BOT_5x5_INTRO_DEPRECATED"  # 31  # There are two queues with the name "BOT_5x5_INTRO" so this one has been renamed in order to avoid a conflict.
-    deprecated_coop_ai_beginner_fives = "BOT_5x5_BEGINNER_DEPRECATED"  # 32  # There are two queues with the name "BOT_5x5_BEGINNER" so this one has been renamed in order to avoid a conflict.
-    deprecated_coop_ai_intermediate_fives = "BOT_5x5_INTERMEDIATE_DEPRECATED"  # 33  # There are two queues with the name "BOT_5x5_INTERMEDIATE" so this one has been renamed in order to avoid a conflict.
+    deprecated_coop_ai_intro_fives = "BOT_5x5_INTRO_DEPRECATED"  # 31  # There are two queues with the name
+    # "BOT_5x5_INTRO" so this one has been renamed in order to avoid a conflict.
+    deprecated_coop_ai_beginner_fives = "BOT_5x5_BEGINNER_DEPRECATED"  # 32  # There are two queues with the name
+    # "BOT_5x5_BEGINNER" so this one has been renamed in order to avoid a conflict.
+    deprecated_coop_ai_intermediate_fives = "BOT_5x5_INTERMEDIATE_DEPRECATED"  # 33  # There are two queues with the
+    # name "BOT_5x5_INTERMEDIATE" so this one has been renamed in order to avoid a conflict.
     deprecated_ranked_team_threes = "RANKED_TEAM_3x3"  # 41
     deprecated_ranked_team_fives = "RANKED_TEAM_5x5"  # 42
     deprecated_coop_ai_threes = "BOT_TT_3x3"  # 52
@@ -448,7 +592,12 @@ class Queue(Enum):
     guardian_invasion_onslaught = "INVASION_ONSLAUGHT"  # 990
     overcharge = "OVERCHARGE"  # 1000
     all_random_urf_snow = "SNOWURF"  # 1010
-    one_for_all_rapid = "ONEFORALL_RAPID_5x5" # 1020
+    one_for_all_rapid = "ONEFORALL_RAPID_5x5"  # 1020
+    odyssey_intro = "ODYSSEY_INTRO"  # 1030
+    odyssey_cadet = "ODYSSEY_CADET"  # 1040
+    odyssey_crewmember = "ODYSSEY_CREWMEMBER"  # 1050
+    odyssey_captain = "ODYSSEY_CAPTAIN"  # 1060
+    odyssey_onslaught = "ODYSSEY_ONSLAUGHT"  # 1070
     nexus_blitz = "NEXUS_BLITZ"  # 1200
 
     def from_id(id: int):
@@ -461,22 +610,31 @@ class Queue(Enum):
 
 QUEUE_IDS = {
     Queue.custom: 0,  # Custom games
-    Queue.deprecated_blind_fives: 2,  # Summoner's Rift    5v5 Blind Pick games    Deprecated in patch 7.19 in favor of queueId 430
-    Queue.deprecated_ranked_solo_fives: 4,  # Summoner's Rift    5v5 Ranked Solo games    Deprecated in favor of queueId 420
+    Queue.deprecated_blind_fives: 2,
+    # Summoner's Rift    5v5 Blind Pick games    Deprecated in patch 7.19 in favor of queueId 430
+    Queue.deprecated_ranked_solo_fives: 4,
+    # Summoner's Rift    5v5 Ranked Solo games    Deprecated in favor of queueId 420
     Queue.deprecated_ranked_premade_fives: 6,  # Summoner's Rift    5v5 Ranked Premade games    Game mode deprecated
-    Queue.deprecated_coop_ai_fives: 7,  # Summoner's Rift    Co-op vs AI games    Deprecated in favor of queueId 32 and 33
-    Queue.deprecated_blind_threes: 8,  # Twisted Treeline    3v3 Normal games    Deprecated in patch 7.19 in favor of queueId 460
-    Queue.deprecated_ranked_premade_threes: 9,  # Twisted Treeline    3v3 Ranked Flex games    Deprecated in patch 7.19 in favor of queueId 470
+    Queue.deprecated_coop_ai_fives: 7,
+    # Summoner's Rift    Co-op vs AI games    Deprecated in favor of queueId 32 and 33
+    Queue.deprecated_blind_threes: 8,
+    # Twisted Treeline    3v3 Normal games    Deprecated in patch 7.19 in favor of queueId 460
+    Queue.deprecated_ranked_premade_threes: 9,
+    # Twisted Treeline    3v3 Ranked Flex games    Deprecated in patch 7.19 in favor of queueId 470
     Queue.deprecated_draft_fives: 14,  # Summoner's Rift    5v5 Draft Pick games    Deprecated in favor of queueId 400
     Queue.deprecated_blind_dominion: 16,  # Crystal Scar    5v5 Dominion Blind Pick games    Game mode deprecated
     Queue.deprecated_draft_dominion: 17,  # Crystal Scar    5v5 Dominion Draft Pick games    Game mode deprecated
     Queue.deprecated_coop_ai_dominion: 25,  # Crystal Scar    Dominion Co-op vs AI games    Game mode deprecated
-    Queue.deprecated_coop_ai_intro_fives: 31,  # Summoner's Rift    Co-op vs AI Intro Bot games    Deprecated in patch 7.19 in favor of queueId 830
-    Queue.deprecated_coop_ai_beginner_fives: 32,  # Summoner's Rift    Co-op vs AI Beginner Bot games    Deprecated in patch 7.19 in favor of queueId 840
-    Queue.deprecated_coop_ai_intermediate_fives: 33,  # Summoner's Rift    Co-op vs AI Intermediate Bot games    Deprecated in patch 7.19 in favor of queueId 850
+    Queue.deprecated_coop_ai_intro_fives: 31,
+    # Summoner's Rift    Co-op vs AI Intro Bot games    Deprecated in patch 7.19 in favor of queueId 830
+    Queue.deprecated_coop_ai_beginner_fives: 32,
+    # Summoner's Rift    Co-op vs AI Beginner Bot games    Deprecated in patch 7.19 in favor of queueId 840
+    Queue.deprecated_coop_ai_intermediate_fives: 33,
+    # Summoner's Rift    Co-op vs AI Intermediate Bot games    Deprecated in patch 7.19 in favor of queueId 850
     Queue.deprecated_ranked_team_threes: 41,  # Twisted Treeline    3v3 Ranked Team games    Game mode deprecated
     Queue.deprecated_ranked_team_fives: 42,  # Summoner's Rift    5v5 Ranked Team games    Game mode deprecated
-    Queue.deprecated_coop_ai_threes: 52,  # Twisted Treeline    Co-op vs AI games    Deprecated in patch 7.19 in favor of queueId 800
+    Queue.deprecated_coop_ai_threes: 52,
+    # Twisted Treeline    Co-op vs AI games    Deprecated in patch 7.19 in favor of queueId 800
     Queue.deprecated_team_builder_fives: 61,  # Summoner's Rift    5v5 Team Builder games    Game mode deprecated
     Queue.deprecated_aram: 65,  # Howling Abyss    5v5 ARAM games    Deprecated in patch 7.19 in favor of queueId 450
     Queue.one_for_all: 70,  # Summoner's Rift    One for All games
@@ -486,21 +644,28 @@ QUEUE_IDS = {
     Queue.urf: 76,  # Summoner's Rift    Ultra Rapid Fire games
     Queue.mirror_mode_fives: 78,  # Summoner's Rift    Mirrored One for All
     Queue.urf_coop_ai: 83,  # Summoner's Rift    Co-op vs AI Ultra Rapid Fire games
-    Queue.deprecated_doom_bots_rank_1: 91,  # Summoner's Rift    Doom Bots Rank 1 games    Deprecated in patch 7.21 in favor of queueId 950
-    Queue.deprecated_doom_bots_rank_2: 92,  # Summoner's Rift    Doom Bots Rank 2 games    Deprecated in patch 7.21 in favor of queueId 950
-    Queue.deprecated_doom_bots_rank_5: 93,  # Summoner's Rift    Doom Bots Rank 5 games    Deprecated in patch 7.21 in favor of queueId 950
+    Queue.deprecated_doom_bots_rank_1: 91,
+    # Summoner's Rift    Doom Bots Rank 1 games    Deprecated in patch 7.21 in favor of queueId 950
+    Queue.deprecated_doom_bots_rank_2: 92,
+    # Summoner's Rift    Doom Bots Rank 2 games    Deprecated in patch 7.21 in favor of queueId 950
+    Queue.deprecated_doom_bots_rank_5: 93,
+    # Summoner's Rift    Doom Bots Rank 5 games    Deprecated in patch 7.21 in favor of queueId 950
     Queue.ascension: 96,  # Crystal Scar    Ascension games
     Queue.hexakill_twisted_treeline: 98,  # Twisted Treeline    6v6 Hexakill games
     Queue.aram_butchers_bridge: 100,  # Butcher's Bridge    5v5 ARAM games
-    Queue.deprecated_poro_king: 300,  # Howling Abyss    King Poro games    Deprecated in patch 7.19 in favor of queueId 920
+    Queue.deprecated_poro_king: 300,
+    # Howling Abyss    King Poro games    Deprecated in patch 7.19 in favor of queueId 920
     Queue.nemesis_draft: 310,  # Summoner's Rift    Nemesis games
     Queue.black_market_brawlers: 313,  # Summoner's Rift    Black Market Brawlers games
-    Queue.deprecated_nexus_siege: 315,  # Summoner's Rift    Nexus Siege games    Deprecated in patch 7.19 in favor of queueId 940
+    Queue.deprecated_nexus_siege: 315,
+    # Summoner's Rift    Nexus Siege games    Deprecated in patch 7.19 in favor of queueId 940
     Queue.definitely_not_dominion: 317,  # Crystal Scar    Definitely Not Dominion games
-    Queue.deprecated_all_random_urf: 318,  # Summoner's Rift    All Random URF games      Game mode deprecated in patch 8.10 in favor is queueId 900
+    Queue.deprecated_all_random_urf: 318,
+    # Summoner's Rift    All Random URF games      Game mode deprecated in patch 8.10 in favor is queueId 900
     Queue.all_random_summoners_rift: 325,  # Summoner's Rift    All Random games
     Queue.normal_draft_fives: 400,  # Summoner's Rift    5v5 Draft Pick games
-    Queue.deprecated_ranked_fives: 410,  # Summoner's Rift    5v5 Ranked Dynamic games    Game mode deprecated in patch 6.22
+    Queue.deprecated_ranked_fives: 410,
+    # Summoner's Rift    5v5 Ranked Dynamic games    Game mode deprecated in patch 6.22
     Queue.ranked_solo_fives: 420,  # Summoner's Rift    5v5 Ranked Solo games
     Queue.blind_fives: 430,  # Summoner's Rift    5v5 Blind Pick games
     Queue.ranked_flex_fives: 440,  # Summoner's Rift    5v5 Ranked Flex games
@@ -526,14 +691,21 @@ QUEUE_IDS = {
     Queue.guardian_invasion_onslaught: 990,  # Valoran City Park    Star Guardian Invasion: Onslaught games
     Queue.overcharge: 1000,  # Overcharge, PROJECT: Hunters games
     Queue.all_random_urf_snow: 1010,  # Summoner's Rift, Snow ARURF games
-    Queue.one_for_all_rapid: 1020, # Summoner's Rift  One for All games (increased gold and exp gain)
+    Queue.one_for_all_rapid: 1020,  # Summoner's Rift  One for All games (increased gold and exp gain)
+    Queue.odyssey_intro: 1030,  # Odyssey: Extraction
+    Queue.odyssey_cadet: 1040,  # Odyssey: Extraction
+    Queue.odyssey_crewmember: 1050,  # Odyssey: Extraction
+    Queue.odyssey_captain: 1060,  # Odyssey: Extraction
+    Queue.odyssey_onslaught: 1070,  # Odyssey: Extraction
     Queue.nexus_blitz: 1200,  # Nexus Blitz map    Nexus Blitz
 }
 
 RANKED_QUEUES = {
-    Queue.deprecated_ranked_solo_fives,  # Summoner's Rift    5v5 Ranked Solo games    Deprecated in favor of queueId 420
+    Queue.deprecated_ranked_solo_fives,
+    # Summoner's Rift    5v5 Ranked Solo games    Deprecated in favor of queueId 420
     Queue.deprecated_ranked_premade_fives,  # Summoner's Rift    5v5 Ranked Premade games    Game mode deprecated
-    Queue.deprecated_ranked_premade_threes,  # Twisted Treeline    3v3 Ranked Flex games    Deprecated in patch 7.19 in favor of queueId 470
+    Queue.deprecated_ranked_premade_threes,
+    # Twisted Treeline    3v3 Ranked Flex games    Deprecated in patch 7.19 in favor of queueId 470
     Queue.deprecated_ranked_team_threes,  # Twisted Treeline    3v3 Ranked Team games    Game mode deprecated
     Queue.deprecated_ranked_team_fives,  # Summoner's Rift    5v5 Ranked Team games    Game mode deprecated
     Queue.deprecated_ranked_fives,  # Summoner's Rift    5v5 Ranked Dynamic games    Game mode deprecated in patch 6.22
@@ -541,3 +713,38 @@ RANKED_QUEUES = {
     Queue.ranked_flex_fives,  # Summoner's Rift    5v5 Ranked Flex games
     Queue.ranked_flex_threes,  # Twisted Treeline    3v3 Ranked Flex games
 }
+
+
+class Ward(Enum):
+    control_ward = "CONTROL_WARD"
+    sight_ward = "SIGHT_WARD"
+    yellow_trinket = "YELLOW_TRINKET"
+
+
+class EventType(Enum):
+    building_kill = "BUILDING_KILL"
+    building_assist = "BUILDING_ASSIST"
+    champion_kill = "CHAMPION_KILL"
+    champion_death = "CHAMPION_DEATH"
+    champion_assist = "CHAMPION_ASSIST"
+    elite_monster_kill = "ELITE_MONSTER_KILL"
+    ward_kill = "WARD_KILL"
+    ward_placed = "WARD_PLACED"
+
+
+class BuildingType(Enum):
+    tower_building = "TOWER_BUILDING"
+
+
+class MonsterType(Enum):
+    baron_nashor = "BARON_NASHOR"
+    dragon = "DRAGON"
+    riftherald = "RIFTHERALD"
+
+
+class MonsterSubType(Enum):
+    air_dragon = "AIR_DRAGON"
+    earth_dragon = "EARTH_DRAGON"
+    fire_dragon = "FIRE_DRAGON"
+    water_dragon = "WATER_DRAGON"
+    elder_dragon = "ELDER_DRAGON"
