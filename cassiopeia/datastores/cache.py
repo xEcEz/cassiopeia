@@ -16,19 +16,18 @@ from ..core.staticdata.language import LanguagesData, Locales
 from ..core.staticdata.languagestrings import LanguageStringsData, LanguageStrings
 from ..core.staticdata.version import VersionListData, Versions
 from ..core.championmastery import ChampionMasteryData, ChampionMasteryListData, ChampionMastery, ChampionMasteries
-from ..core.league import LeaguePositionsData, LeagueListData, MasterLeagueListData, ChallengerLeagueListData, LeagueEntries, League, ChallengerLeague, MasterLeague
+from ..core.league import LeaguePositionsData, LeagueListData, MasterLeagueListData, GrandmasterLeagueListData, ChallengerLeagueListData, LeagueEntries, League, ChallengerLeague, GrandmasterLeague, MasterLeague
 from ..core.match import MatchData, TimelineData, Match, Timeline
 from ..core.summoner import SummonerData, Summoner
 from ..core.status import ShardStatusData, ShardStatus
 from ..core.spectator import CurrentGameInfoData, FeaturedGamesData, CurrentMatch, FeaturedMatches
-from ..core.champion import ChampionStatusData, ChampionStatusListData
+from ..core.champion import ChampionRotationData, ChampionRotation
 
 T = TypeVar("T")
 
 
 default_expirations = {
-    ChampionStatusData: datetime.timedelta(hours=6),
-    ChampionStatusListData: datetime.timedelta(hours=6),
+    ChampionRotationData: datetime.timedelta(hours=6),
     Realms: datetime.timedelta(hours=6),
     Versions: datetime.timedelta(hours=6),
     Champion: datetime.timedelta(days=20),
@@ -50,6 +49,7 @@ default_expirations = {
     LeagueEntries: datetime.timedelta(hours=6),
     League: datetime.timedelta(hours=6),
     ChallengerLeague: datetime.timedelta(hours=6),
+    GrandmasterLeague: datetime.timedelta(hours=6),
     MasterLeague: datetime.timedelta(hours=6),
     Match: datetime.timedelta(days=3),
     Timeline: datetime.timedelta(days=1),
@@ -141,51 +141,29 @@ class Cache(DataSource, DataSink):
         self._cache.expire(type)
 
 
-    ###################
-    # Champion Status #
-    ###################
+    #####################
+    # Champion Rotation #
+    #####################
 
-    # Champion Status Data
+    # Champion Rotation Data
 
-    @get.register(ChampionStatusData)
-    @validate_query(uniquekeys.validate_champion_status_query, uniquekeys.convert_region_to_platform)
-    def get_champion_status(self, query: Mapping[str, Any], context: PipelineContext = None) -> ChampionStatusData:
-        return self._get(ChampionStatusData, query, uniquekeys.for_champion_status_query, context)
+    @get.register(ChampionRotationData)
+    @validate_query(uniquekeys.validate_champion_rotation_query, uniquekeys.convert_region_to_platform)
+    def get_champion_rotation(self, query: Mapping[str, Any], context: PipelineContext = None) -> ChampionRotationData:
+        return self._get(ChampionRotationData, query, uniquekeys.for_champion_rotation_query, context)
 
-    @get_many.register(ChampionStatusData)
-    @validate_query(uniquekeys.validate_many_champion_status_query, uniquekeys.convert_region_to_platform)
-    def get_many_champion_status(self, query: Mapping[str, Any], context: PipelineContext = None) -> Generator[ChampionStatusData, None, None]:
-        return self._get_many(ChampionStatusData, query, uniquekeys.for_many_champion_status_query, context)
+    @get_many.register(ChampionRotationData)
+    @validate_query(uniquekeys.validate_many_champion_rotation_query, uniquekeys.convert_region_to_platform)
+    def get_many_champion_rotation(self, query: Mapping[str, Any], context: PipelineContext = None) -> Generator[ChampionRotationData, None, None]:
+        return self._get_many(ChampionRotationData, query, uniquekeys.for_many_champion_rotation_query, context)
 
-    @put.register(ChampionStatusData)
-    def put_champion_status(self, item: ChampionStatusData, context: PipelineContext = None) -> None:
-        self._put(ChampionStatusData, item, uniquekeys.for_champion_status, context=context)
+    @put.register(ChampionRotationData)
+    def put_champion_rotation(self, item: ChampionRotationData, context: PipelineContext = None) -> None:
+        self._put(ChampionRotationData, item, uniquekeys.for_champion_rotation, context=context)
 
-    @put_many.register(ChampionStatusData)
-    def put_many_champion_status(self, items: Iterable[ChampionStatusData], context: PipelineContext = None) -> None:
-        self._put_many(ChampionStatusData, items, uniquekeys.for_many_champion_status, context=context)
-
-    # Champion Status List Data
-
-    @get.register(ChampionStatusListData)
-    @validate_query(uniquekeys.validate_champion_status_list_query, uniquekeys.convert_region_to_platform)
-    def get_champion_status_list(self, query: Mapping[str, Any], context: PipelineContext = None) -> ChampionStatusListData:
-        return self._get(ChampionStatusListData, query, uniquekeys.for_champion_status_list_query, context)
-
-    @get_many.register(ChampionStatusListData)
-    @validate_query(uniquekeys.validate_many_champion_status_list_query, uniquekeys.convert_region_to_platform)
-    def get_many_champion_status_list(self, query: Mapping[str, Any], context: PipelineContext = None) -> Generator[ChampionStatusListData, None, None]:
-        return self._get_many(ChampionStatusListData, query, uniquekeys.for_many_champion_status_list_query, context)
-
-    @put.register(ChampionStatusListData)
-    def put_champion_status_list(self, item: ChampionStatusListData, context: PipelineContext = None) -> None:
-        self._put(ChampionStatusListData, item, uniquekeys.for_champion_status_list, context=context)
-        for csd in item:
-            self._put(ChampionStatusData, csd, uniquekeys.for_champion_status, context=context)
-
-    @put_many.register(ChampionStatusListData)
-    def put_many_champion_status_list(self, items: Iterable[ChampionStatusListData], context: PipelineContext = None) -> None:
-        self._put_many(ChampionStatusListData, items, uniquekeys.for_champion_status_list, context=context)
+    @put_many.register(ChampionRotationData)
+    def put_many_champion_rotation(self, items: Iterable[ChampionRotationData], context: PipelineContext = None) -> None:
+        self._put_many(ChampionRotationData, items, uniquekeys.for_many_champion_rotation, context=context)
 
 
     ########################
@@ -306,6 +284,27 @@ class Cache(DataSource, DataSink):
     @put_many.register(ChallengerLeague)
     def put_many_league_summoner(self, items: Iterable[ChallengerLeague], context: PipelineContext = None) -> None:
         self._put_many(ChallengerLeague, items, uniquekeys.for_challenger_league, context=context)
+
+    # Grandmaster
+
+    @get.register(GrandmasterLeague)
+    @validate_query(uniquekeys.validate_grandmaster_league_query, uniquekeys.convert_region_to_platform)
+    def get_league_summoner(self, query: Mapping[str, Any], context: PipelineContext = None) -> GrandmasterLeague:
+        return self._get(GrandmasterLeague, query, uniquekeys.for_grandmaster_league_query, context)
+
+    @get_many.register(GrandmasterLeague)
+    @validate_query(uniquekeys.validate_many_grandmaster_league_query, uniquekeys.convert_region_to_platform)
+    def get_many_league_summoner(self, query: Mapping[str, Any], context: PipelineContext = None) -> Generator[GrandmasterLeague, None, None]:
+        return self._get_many(GrandmasterLeague, query, uniquekeys.for_many_grandmaster_league_query, context)
+
+    @put.register(GrandmasterLeague)
+    def put_league_summoner(self, item: GrandmasterLeague, context: PipelineContext = None) -> None:
+        self._put(GrandmasterLeague, item, uniquekeys.for_grandmaster_league, context=context)
+
+    @put_many.register(GrandmasterLeague)
+    def put_many_league_summoner(self, items: Iterable[GrandmasterLeague], context: PipelineContext = None) -> None:
+        self._put_many(GrandmasterLeague, items, uniquekeys.for_grandmaster_league, context=context)
+
 
     # Master
 

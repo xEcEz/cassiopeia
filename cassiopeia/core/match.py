@@ -7,7 +7,7 @@ from merakicommons.cache import lazy, lazy_property
 from merakicommons.container import searchable, SearchableList, SearchableLazyList, SearchableDictionary
 
 from .. import configuration
-from ..data import Region, Platform, Tier, GameType, GameMode, Queue, Side, Season, Lane, Role, Key
+from ..data import Region, Platform, Tier, GameType, GameMode, Queue, Side, Season, Lane, Role, Key, SummonersRiftArea
 from .common import CoreData, CoreDataList, CassiopeiaObject, CassiopeiaGhost, CassiopeiaLazyList, provide_default_region, ghost_load_on
 from ..dto import match as dto
 from .patch import Patch
@@ -265,7 +265,7 @@ class MatchHistory(CassiopeiaLazyList):  # type: List[Match]
             end_time = end_time.timestamp * 1000
         kwargs["end_time"] = end_time
         assert isinstance(summoner, Summoner)
-        self.__account_id_callable = lambda: summoner.account.id
+        self.__account_id_callable = lambda: summoner.account_id
         self.__summoner = summoner
         CassiopeiaObject.__init__(self, **kwargs)
 
@@ -273,7 +273,7 @@ class MatchHistory(CassiopeiaLazyList):  # type: List[Match]
     def __get_query_from_kwargs__(cls, *, summoner: Summoner, begin_index: int = None, end_index: int = None, begin_time: arrow.Arrow = None, end_time: arrow.Arrow = None, queues: Set[Queue] = None, seasons: Set[Season] = None, champions: Set[Champion] = None):
         assert isinstance(summoner, Summoner)
         query = {"region": summoner.region}
-        query["account.id"] = summoner.account.id
+        query["accountId"] = summoner.account_id
 
         if begin_index is not None:
             query["beginIndex"] = begin_index
@@ -392,6 +392,10 @@ class Position(CassiopeiaObject):
     @property
     def y(self) -> int:
         return self._data[PositionData].y
+
+    @property
+    def location(self) -> SummonersRiftArea:
+        return SummonersRiftArea.from_position(self)
 
 
 @searchable({str: ["type", "tower_type", "ascended_type", "ward_type", "monster_type", "type", "monster_sub_type", "lane_type", "building_type"]})
@@ -1159,7 +1163,7 @@ class Participant(CassiopeiaObject):
             kwargs["name"] = self._data[ParticipantData].summonerName
         except AttributeError:
             pass
-        kwargs["account"] = self._data[ParticipantData].currentAccountId
+        kwargs["account_id"] = self._data[ParticipantData].currentAccountId
         kwargs["region"] = Platform(self._data[ParticipantData].currentPlatformId).region
         summoner = Summoner(**kwargs)
         try:
@@ -1219,7 +1223,8 @@ class Team(CassiopeiaObject):
 
     @property
     def bans(self) -> List["Champion"]:
-        return [Champion(id=champion_id, version=self.__match.version, region=self.__match.region) if champion_id != -1 else None for champion_id in self._data[TeamData].bans]
+        version = _choose_staticdata_version(self.__match)
+        return [Champion(id=champion_id, version=version, region=self.__match.region) if champion_id != -1 else None for champion_id in self._data[TeamData].bans]
 
     @property
     def baron_kills(self) -> int:

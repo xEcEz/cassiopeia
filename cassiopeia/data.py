@@ -190,6 +190,7 @@ class Tier(Enum):
     bronze = "BRONZE"
     iron = "IRON"
     provisional = "PROVISIONAL"
+    unranked = "UNRANKED"
 
     @classmethod
     def from_int(cls, value):
@@ -203,8 +204,9 @@ class Tier(Enum):
 
     @staticmethod
     def _order():
-        return {Tier.challenger: 7, Tier.master: 6, Tier.diamond: 5,
-                Tier.platinum: 4, Tier.gold: 3, Tier.silver: 2, Tier.bronze: 1}
+        return {Tier.challenger: 9, Tier.grandmaster: 8, Tier.master: 7,
+                Tier.diamond: 6, Tier.platinum: 5, Tier.gold: 4,
+                Tier.silver: 3, Tier.bronze: 2, Tier.iron: 1}
 
     @staticmethod
     def _inverted_order():
@@ -243,14 +245,13 @@ class Division(Enum):
     two = "II"
     three = "III"
     four = "IV"
-    five = "V"
 
     def __str__(self):
         return self.value
 
     @staticmethod
     def _order():
-        return {Division.one: 5, Division.two: 4, Division.three: 3, Division.four: 2, Division.five: 1}
+        return {Division.one: 4, Division.two: 3, Division.three: 2, Division.four: 1}
 
     def __lt__(self, other):
         return self._order()[self] < other._order()[other]
@@ -378,6 +379,98 @@ class Lane(Enum):
             "JUNGLE": Lane.jungle,
             "NONE": None
         }[string]
+    
+
+class SummonersRiftArea(Enum):
+    none = "NONE"
+    nexus_blue = "NEXUS_BLUE"
+    nexus_red = "NEXUS_RED"
+    top_lane_blue = "TOP_LANE_BLUE"
+    top_lane_purple = "TOP_LANE_PURPLE"
+    top_lane_red = "TOP_LANE_RED"
+    mid_lane_blue = "MID_LANE_BLUE"
+    mid_lane_purple = "MID_LANE_PURPLE"
+    mid_lane_red = "MID_LANE_RED"
+    bot_lane_blue = "BOT_LANE_BLUE"
+    bot_lane_purple = "BOT_LANE_PURPLE"
+    bot_lane_red = "BOT_LANE_RED"
+    jungle_top_blue = "JUNGLE_TOP_BLUE"
+    jungle_top_red = "JUNGLE_TOP_RED"
+    jungle_bot_blue = "JUNGLE_BOT_BLUE"
+    jungle_bot_red = "JUNGLE_BOT_RED"
+    river_top = "RIVER_TOP"
+    river_bot = "RIVER_BOT"
+
+    def get_side(self):
+        if "BLUE" in self.value:
+            return Side.blue
+        elif "RED" in self.value:
+            return Side.red
+        else:
+            return None
+
+    def get_lane(self):
+        if "TOP" in self.value:
+            return Lane.top_lane
+        elif "MID" in self.value:
+            return Lane.mid_lane
+        elif "BOT" in self.value:
+            return Lane.bot_lane
+        elif "JUNGLE" in self.value:
+            return Lane.jungle
+        else:
+            return None
+
+    @staticmethod
+    def from_position(position: "Position") -> "SummonersRiftArea":
+        from .core.match import Position
+        x, y = position.x, position.y
+
+        # Load the map if it isn't already loaded
+        try:
+            map = SummonersRiftArea.__map
+        except AttributeError:
+            import os
+            from PIL import Image
+            script_dir = os.path.dirname(__file__)
+            rel_path = './resources/summonersRiftAreas.png'
+            map = Image.open(os.path.join(script_dir, rel_path))
+            SummonersRiftArea.__map_size = map.size
+            map = map.load()
+            SummonersRiftArea.__map = map
+        image_width, image_height = SummonersRiftArea.__map_size
+
+        min_x = -120
+        min_y = -120
+        max_x = 14870
+        max_y = 14980
+        width = max_x - min_x
+        height = max_y - min_y
+        x = round((x - min_x) / width * (image_width - 1))
+        y = round(abs(y - min_y - height) / height * (image_height - 1))
+        rgb = map[x, y][0]
+
+        color_mapping = {
+            0: SummonersRiftArea.none,
+            10: SummonersRiftArea.nexus_blue,
+            20: SummonersRiftArea.nexus_red,
+            30: SummonersRiftArea.top_lane_blue,
+            40: SummonersRiftArea.top_lane_purple,
+            50: SummonersRiftArea.top_lane_red,
+            60: SummonersRiftArea.mid_lane_blue,
+            70: SummonersRiftArea.mid_lane_purple,
+            80: SummonersRiftArea.mid_lane_red,
+            90: SummonersRiftArea.bot_lane_blue,
+            100: SummonersRiftArea.bot_lane_purple,
+            110: SummonersRiftArea.bot_lane_red,
+            120: SummonersRiftArea.jungle_top_blue,
+            130: SummonersRiftArea.jungle_top_red,
+            140: SummonersRiftArea.jungle_bot_blue,
+            150: SummonersRiftArea.jungle_bot_red,
+            160: SummonersRiftArea.river_top,
+            170: SummonersRiftArea.river_bot
+        }
+        return color_mapping.get(rgb, SummonersRiftArea.none)
 
 
 class SummonersRiftArea(Enum):
@@ -592,7 +685,7 @@ class Queue(Enum):
     guardian_invasion_onslaught = "INVASION_ONSLAUGHT"  # 990
     overcharge = "OVERCHARGE"  # 1000
     all_random_urf_snow = "SNOWURF"  # 1010
-    one_for_all_rapid = "ONEFORALL_RAPID_5x5"  # 1020
+    one_for_all_rapid = "ONEFORALL_RAPID_5x5" # 1020
     odyssey_intro = "ODYSSEY_INTRO"  # 1030
     odyssey_cadet = "ODYSSEY_CADET"  # 1040
     odyssey_crewmember = "ODYSSEY_CREWMEMBER"  # 1050
@@ -691,7 +784,7 @@ QUEUE_IDS = {
     Queue.guardian_invasion_onslaught: 990,  # Valoran City Park    Star Guardian Invasion: Onslaught games
     Queue.overcharge: 1000,  # Overcharge, PROJECT: Hunters games
     Queue.all_random_urf_snow: 1010,  # Summoner's Rift, Snow ARURF games
-    Queue.one_for_all_rapid: 1020,  # Summoner's Rift  One for All games (increased gold and exp gain)
+    Queue.one_for_all_rapid: 1020, # Summoner's Rift  One for All games (increased gold and exp gain)
     Queue.odyssey_intro: 1030,  # Odyssey: Extraction
     Queue.odyssey_cadet: 1040,  # Odyssey: Extraction
     Queue.odyssey_crewmember: 1050,  # Odyssey: Extraction

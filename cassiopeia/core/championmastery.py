@@ -48,9 +48,12 @@ class ChampionMasteries(CassiopeiaLazyList):
         if isinstance(summoner, Summoner):
             query["summoner.id"] = summoner.id
         elif isinstance(summoner, str):
-            query["summoner.id"] = Summoner(name=summoner, region=region).id
-        else:  # int
-            query["summoner.id"] = summoner
+            if len(summoner) < 35:
+                # It's a summoner name
+                query["summoner.id"] = Summoner(name=summoner, region=region).id
+            else:
+                # It's probably a summoner id
+                query["summoner.id"] = summoner
         return query
 
     @lazy_property
@@ -71,20 +74,23 @@ class ChampionMastery(CassiopeiaGhost):
     _data_types = {ChampionMasteryData}
 
     @provide_default_region
-    def __init__(self, *, summoner: Union[Summoner, int, str] = None, champion: Union[Champion, int, str] = None, region: Union[Region, str] = None, _account_id: int = None):
+    def __init__(self, *, summoner: Union[Summoner, int, str] = None, champion: Union[Champion, int, str] = None, region: Union[Region, str] = None, _account_id: str = None):
         kwargs = {"region": region}
 
         if _account_id is not None:
-            summoner = Summoner(account=_account_id, region=region)
+            summoner = Summoner(account_id=_account_id, region=region)
 
         if summoner is not None:
             if isinstance(summoner, Summoner):
                 self.__class__.summoner.fget._lazy_set(self, summoner)
             elif isinstance(summoner, str):
-                summoner = Summoner(name=summoner, region=region)
-                self.__class__.summoner.fget._lazy_set(self, summoner)
-            else:  # int
-                kwargs["summonerId"] = summoner
+                if len(summoner) < 35:
+                    # It's a summoner name
+                    summoner = Summoner(name=summoner, region=region)
+                    self.__class__.summoner.fget._lazy_set(self, summoner)
+                else:
+                    # It's probably a summoner id
+                    kwargs["summonerId"] = summoner
 
         if champion is not None:
             if isinstance(champion, Champion):
@@ -104,9 +110,13 @@ class ChampionMastery(CassiopeiaGhost):
         if isinstance(summoner, Summoner):
             query["summoner.id"] = summoner.id
         elif isinstance(summoner, str):
-            query["summoner.id"] = Summoner(name=summoner, region=region).id
-        else:  # int
-            query["summoner.id"] = summoner
+            if len(summoner) < 35:
+                # It's a summoner name
+                query["summoner.id"] = Summoner(name=summoner, region=region).id
+            else:
+                # It's probably a summoner id
+                query["summoner.id"] = summoner
+            
 
         if isinstance(champion, Champion):
             query["champion.id"] = champion.id

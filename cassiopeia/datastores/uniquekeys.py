@@ -4,7 +4,7 @@ from datapipelines import Query, PipelineContext, QueryValidationError
 
 from ..data import Region, Platform, Queue, Tier, Season
 
-from ..dto.champion import ChampionListDto as ChampionStatusListDto, ChampionDto as ChampionStatusDto
+from ..dto.champion import ChampionRotationDto
 from ..dto.championmastery import ChampionMasteryDto, ChampionMasteryListDto, ChampionMasteryScoreDto
 from ..dto.league import LeagueListDto, LeaguePositionDto
 from ..dto.staticdata import ChampionDto, ChampionListDto, ItemDto, ItemListDto, LanguageStringsDto, LanguagesDto, ProfileIconDataDto, ProfileIconDetailsDto, RealmDto, RuneDto, RuneListDto, SummonerSpellDto, SummonerSpellListDto, MapDto, MapListDto, VersionListDto
@@ -13,21 +13,21 @@ from ..dto.match import MatchDto, MatchReferenceDto, TimelineDto
 from ..dto.spectator import CurrentGameInfoDto, FeaturedGamesDto
 from ..dto.summoner import SummonerDto
 
-from ..core.champion import ChampionStatusData, ChampionStatusListData
 from ..core.championmastery import ChampionMastery, ChampionMasteries
-from ..core.league import LeagueEntries, ChallengerLeague, MasterLeague, League
+from ..core.league import LeagueEntries, ChallengerLeague, GrandmasterLeague, MasterLeague, League
 from ..core.staticdata import Champion, Rune, Item, SummonerSpell, Map, Locales, LanguageStrings, ProfileIcon, ProfileIcons, Realms, Versions, Items, Champions, Maps, SummonerSpells, Runes
 from ..core.status import ShardStatus
 from ..core.match import Match, MatchHistory, Timeline
 from ..core.summoner import Summoner
 from ..core.spectator import CurrentMatch, FeaturedMatches, CurrentGameParticipantData
+from ..core.champion import ChampionRotation, ChampionRotationData
 
 from ..core.staticdata.champion import ChampionData
 from ..core.staticdata.item import ItemData
 from ..core.staticdata.summonerspell import SummonerSpellData
 from ..core.staticdata.rune import RuneData
 from ..core.staticdata.map import MapData
-from ..core.summoner import Account, SummonerData
+from ..core.summoner import SummonerData
 
 #############
 # Utilities #
@@ -89,50 +89,23 @@ def convert_region_to_platform(query: MutableMapping[str, Any]) -> None:
 ################
 
 
-validate_champion_status_dto_query = Query. \
-    has("platform").as_(Platform).also. \
-    has("id").as_(int)
-
-
-validate_many_champion_status_dto_query = Query. \
-    has("platform").as_(Platform).also. \
-    has("ids").as_(Iterable)
-
-
-def for_champion_status_dto(champion_status: ChampionStatusDto) -> Tuple[str, int]:
-    return champion_status["platform"], champion_status["id"]
-
-
-def for_champion_status_dto_query(query: Query) -> Tuple[str, int]:
-    return query["platform"].value, query["id"]
-
-
-def for_many_champion_status_dto_query(query: Query) -> Generator[Tuple[str, int], None, None]:
-    for id in query["ids"]:
-        try:
-            id = int(id)
-            yield query["platform"].value, id
-        except ValueError as e:
-            raise QueryValidationError from e
-
-
-validate_champion_status_list_dto_query = Query. \
+validate_champion_rotation_dto_query = Query. \
     has("platform").as_(Platform)
 
 
-validate_many_champion_status_list_dto_query = Query. \
-    has("platforms").as_(Iterable)
+validate_many_champion_rotation_dto_query = Query. \
+    has("platform").as_(Platform)
 
 
-def for_champion_status_list_dto(champion_status_list: ChampionStatusListDto) -> str:
-    return champion_status_list["platform"]
+def for_champion_rotation_dto(champion_rotation: ChampionRotationDto) -> str:
+    return champion_rotation["platform"]
 
 
-def for_champion_status_list_dto_query(query: Query) -> str:
+def for_champion_rotation_dto_query(query: Query) -> str:
     return query["platform"].value
 
 
-def for_many_champion_status_list_dto_query(query: Query) -> Generator[str, None, None]:
+def for_many_champion_rotation_dto_query(query: Query) -> Generator[str, None, None]:
     for platform in query["platforms"]:
         try:
             platform = Platform(platform)
@@ -148,25 +121,25 @@ def for_many_champion_status_list_dto_query(query: Query) -> Generator[str, None
 
 validate_champion_mastery_dto_query = Query. \
     has("platform").as_(Platform).also. \
-    has("playerId").as_(int).also. \
+    has("playerId").as_(str).also. \
     has("championId").as_(int)
 
 
 validate_many_champion_mastery_dto_query = Query. \
     has("platform").as_(Platform).also. \
-    has("playerId").as_(int).also. \
+    has("playerId").as_(str).also. \
     has("championIds").as_(Iterable)
 
 
-def for_champion_mastery_dto(champion_mastery: ChampionMasteryDto) -> Tuple[str, int, int]:
+def for_champion_mastery_dto(champion_mastery: ChampionMasteryDto) -> Tuple[str, str, int]:
     return champion_mastery["platform"], champion_mastery["playerId"], champion_mastery["championId"]
 
 
-def for_champion_mastery_dto_query(query: Query) -> Tuple[str, int, int]:
+def for_champion_mastery_dto_query(query: Query) -> Tuple[str, str, int]:
     return query["platform"].value, query["playerId"], query["championId"]
 
 
-def for_many_champion_mastery_dto_query(query: Query) -> Generator[Tuple[str, int, int], None, None]:
+def for_many_champion_mastery_dto_query(query: Query) -> Generator[Tuple[str, str, int], None, None]:
     for champion_id in query["championIds"]:
         try:
             champion_id = int(champion_id)
@@ -177,7 +150,7 @@ def for_many_champion_mastery_dto_query(query: Query) -> Generator[Tuple[str, in
 
 validate_champion_mastery_list_dto_query = Query. \
     has("platform").as_(Platform).also. \
-    has("playerId").as_(int)
+    has("playerId").as_(str)
 
 
 validate_many_champion_mastery_list_dto_query = Query. \
@@ -185,18 +158,17 @@ validate_many_champion_mastery_list_dto_query = Query. \
     has("playerIds").as_(Iterable)
 
 
-def for_champion_mastery_list_dto(champion_mastery_list: ChampionMasteryListDto) -> Tuple[str, int]:
+def for_champion_mastery_list_dto(champion_mastery_list: ChampionMasteryListDto) -> Tuple[str, str]:
     return champion_mastery_list["platform"], champion_mastery_list["playerId"]
 
 
-def for_champion_mastery_list_dto_query(query: Query) -> Tuple[str, int]:
+def for_champion_mastery_list_dto_query(query: Query) -> Tuple[str, str]:
     return query["platform"].value, query["playerId"]
 
 
-def for_many_champion_mastery_list_dto_query(query: Query) -> Generator[Tuple[str, int], None, None]:
+def for_many_champion_mastery_list_dto_query(query: Query) -> Generator[Tuple[str, str], None, None]:
     for summoner_id in query["playerIds"]:
         try:
-            summoner_id = int(summoner_id)
             yield query["platform"].value, summoner_id
         except ValueError as e:
             raise QueryValidationError from e
@@ -204,7 +176,7 @@ def for_many_champion_mastery_list_dto_query(query: Query) -> Generator[Tuple[st
 
 validate_champion_mastery_score_dto_query = Query. \
     has("platform").as_(Platform).also. \
-    has("playerId").as_(int)
+    has("playerId").as_(str)
 
 
 validate_many_champion_mastery_score_dto_query = Query. \
@@ -212,18 +184,17 @@ validate_many_champion_mastery_score_dto_query = Query. \
     has("playerIds").as_(Iterable)
 
 
-def for_champion_mastery_score_dto(champion_mastery_score: ChampionMasteryScoreDto) -> Tuple[str, int]:
+def for_champion_mastery_score_dto(champion_mastery_score: ChampionMasteryScoreDto) -> Tuple[str, str]:
     return champion_mastery_score["platform"], champion_mastery_score["playerId"]
 
 
-def for_champion_mastery_score_dto_query(query: Query) -> Tuple[str, int]:
+def for_champion_mastery_score_dto_query(query: Query) -> Tuple[str, str]:
     return query["platform"].value, query["playerId"]
 
 
-def for_many_champion_mastery_score_dto_query(query: Query) -> Generator[Tuple[str, int], None, None]:
+def for_many_champion_mastery_score_dto_query(query: Query) -> Generator[Tuple[str, str], None, None]:
     for summoner_id in query["playerIds"]:
         try:
-            summoner_id = int(summoner_id)
             yield query["platform"].value, summoner_id
         except ValueError as e:
             raise QueryValidationError from e
@@ -1042,42 +1013,22 @@ def for_many_summoner_dto_query(query: Query) -> Generator[Tuple[str, Union[int,
 ################
 
 
-validate_champion_status_query = Query. \
-    has("platform").as_(Platform).also. \
-    has("id").as_(int)
+validate_champion_rotation_query = Query. \
+    has("platform").as_(Platform)
 
 
-validate_many_champion_status_query = Query. \
-    has("platform").as_(Platform).also. \
-    has("ids").as_(Iterable)
+validate_many_champion_rotation_query = Query. \
+    has("platform").as_(Platform)
 
 
-validate_champion_status_list_query = Query. \
-    has("platform").as_(Platform).also. \
-    can_have("freeToPlay").with_default(False)
-
-
-validate_many_champion_status_list_query = Query. \
-    has("platforms").as_(Iterable).also. \
-    can_have("freeToPlay").with_default(False)
-
-
-def for_champion_status(champion_status: ChampionStatusData) -> List[Tuple]:
-    keys = [(Region(champion_status.region).platform.value, champion_status.id)]
+def for_champion_rotation(champion_rotation: ChampionRotationData) -> List[Region]:
+    keys = [champion_rotation.platform]
     return keys
 
 
-def for_champion_status_query(query: Query) -> List[Tuple]:
-    keys = [(query["platform"].value, query["id"])]
+def for_champion_rotation_query(query: Query) -> List[str]:
+    keys = [query["platform"].value]
     return keys
-
-
-def for_champion_status_list(champion_status_list: ChampionStatusListData) -> List[Tuple]:
-    return [(Region(champion_status_list.region).platform,)]
-
-
-def for_champion_status_list_query(query: Query) -> List[Tuple]:
-    return [(query["platform"],)]
 
 
 ########################
@@ -1087,13 +1038,13 @@ def for_champion_status_list_query(query: Query) -> List[Tuple]:
 
 validate_champion_mastery_query = Query. \
     has("platform").as_(Platform).also. \
-    has("summoner.id").as_(int).or_("summoner.account.id").as_(int).or_("summoner.name").as_(str).also. \
+    has("summoner.id").as_(str).or_("summoner.accountId").as_(str).or_("summoner.name").as_(str).also. \
     has("champion.id").as_(int).or_("champion.name").as_(str)
 
 
 validate_many_champion_mastery_query = Query. \
     has("platform").as_(Platform).also. \
-    has("summoner.id").as_(int).or_("summoner.account.id").as_(int).or_("summoner.name").as_(str).also. \
+    has("summoner.id").as_(str).or_("summoner.accountId").as_(str).or_("summoner.name").as_(str).also. \
     has("champions.id").as_(Iterable).or_("champions.name").as_(Iterable)
 
 
@@ -1136,10 +1087,10 @@ def for_champion_mastery_query(query: Query) -> List[Tuple]:
         keys.append((query["platform"].value, query["summoner.name"], query["champion.id"]))
     if "summoner.name" in query and "champion.name" in query:
         keys.append((query["platform"].value, query["summoner.name"], query["champion.name"]))
-    if "summoner.account.id" in query and "champion.id" in query:
-        keys.append((query["platform"].value, query["summoner.account.id"], query["champion.id"]))
-    if "summoner.account.id" in query and "champion.name" in query:
-        keys.append((query["platform"].value, query["summoner.account.id"], query["champion.name"]))
+    if "summoner.accountId" in query and "champion.id" in query:
+        keys.append((query["platform"].value, query["summoner.accountId"], query["champion.id"]))
+    if "summoner.accountId" in query and "champion.name" in query:
+        keys.append((query["platform"].value, query["summoner.accountId"], query["champion.name"]))
     return keys
 
 
@@ -1160,8 +1111,8 @@ def for_many_champion_mastery_query(query: Query) -> Generator[Tuple[str, str, s
                 keys.append((query["platform"].value, query["summoner.id"], identifier))
             if "summoner.name" in query:
                 keys.append((query["platform"].value, query["summoner.name"], identifier))
-            if "summoner.account.id" in query:
-                keys.append((query["platform"].value, query["summoner.account.id"], identifier))
+            if "summoner.accountId" in query:
+                keys.append((query["platform"].value, query["summoner.accountId"], identifier))
         if len(keys) == 0:
             raise QueryValidationError
         yield keys
@@ -1169,12 +1120,12 @@ def for_many_champion_mastery_query(query: Query) -> Generator[Tuple[str, str, s
 
 validate_champion_masteries_query = Query. \
     has("platform").as_(Platform).also. \
-    has("summoner.id").as_(int).or_("summoner.account.id").as_(int).or_("summoner.name")
+    has("summoner.id").as_(str).or_("summoner.accountId").as_(int).or_("summoner.name")
 
 
 validate_many_champion_masteries_query = Query. \
     has("platform").as_(Platform).also. \
-    has("summoner.id").as_(int).or_("summoner.account.id").as_(int).or_("summoner.name")
+    has("summoner.id").as_(str).or_("summoner.accountId").as_(int).or_("summoner.name")
 
 
 def for_champion_masteries(champion_mastery: ChampionMasteries) -> List[Tuple]:
@@ -1200,8 +1151,8 @@ def for_champion_masteries_query(query: Query) -> List[Tuple]:
         keys.append((query["platform"].value, query["summoner.id"]))
     if "summoner.name" in query:
         keys.append((query["platform"].value, query["summoner.name"]))
-    if "summoner.account.id" in query:
-        keys.append((query["platform"].value, query["summoner.account.id"]))
+    if "summoner.accountId" in query:
+        keys.append((query["platform"].value, query["summoner.accountId"]))
     return keys
 
 
@@ -1214,7 +1165,7 @@ def for_champion_masteries_query(query: Query) -> List[Tuple]:
 
 validate_league_entries_query = Query. \
     has("platform").as_(Platform).also. \
-    has("summoner.id").as_(int)
+    has("summoner.id").as_(str)
 
 
 validate_many_league_entries_query = Query. \
@@ -1222,15 +1173,15 @@ validate_many_league_entries_query = Query. \
     has("summoners.id").as_(Iterable)
 
 
-def for_league_entries(entries: LeagueEntries) -> List[Tuple[str, int]]:
+def for_league_entries(entries: LeagueEntries) -> List[Tuple[str, str]]:
     return [(entries.platform.value, entries._LeagueEntries__summoner.id)]
 
 
-def for_league_entries_query(query: Query) -> List[Tuple[str, int]]:
+def for_league_entries_query(query: Query) -> List[Tuple[str, str]]:
     return [(query["platform"].value, query["summoner.id"])]
 
 
-def for_many_league_entries_query(query: Query) -> Generator[List[Tuple[str, int]], None, None]:
+def for_many_league_entries_query(query: Query) -> Generator[List[Tuple[str, str]], None, None]:
     for id in query["summoners.id"]:
         try:
             yield [(query["platform"].value, id)]
@@ -1249,15 +1200,15 @@ validate_many_league_query = Query. \
     has("ids").as_(Iterable)
 
 
-def for_league(league: League) -> List[Tuple[str, int]]:
+def for_league(league: League) -> List[Tuple[str, str]]:
     return [(league.platform.value, league.id)]
 
 
-def for_league_query(query: Query) -> List[Tuple[str, int]]:
+def for_league_query(query: Query) -> List[Tuple[str, str]]:
     return [(query["platform"].value, query["id"])]
 
 
-def for_many_league_query(query: Query) -> Generator[List[Tuple[str, int]], None, None]:
+def for_many_league_query(query: Query) -> Generator[List[Tuple[str, str]], None, None]:
     for id in query["ids"]:
         try:
             yield [(query["platform"].value, id)]
@@ -1285,6 +1236,33 @@ def for_challenger_league_query(query: Query) -> List[Tuple[str, str]]:
 
 
 def for_many_challenger_league_query(query: Query) -> Generator[List[Tuple[str, str]], None, None]:
+    for queue in query["queues"]:
+        try:
+            yield [(query["platform"].value, queue.value)]
+        except ValueError as e:
+            raise QueryValidationError from e
+
+# Grandmaster
+
+validate_grandmaster_league_query = Query. \
+    has("platform").as_(Platform).also. \
+    has("queue").as_(Queue)
+
+
+validate_many_grandmaster_league_query = Query. \
+    has("platform").as_(Platform).also. \
+    has("queues").as_(Iterable)
+
+
+def for_grandmaster_league(league: GrandmasterLeague) -> List[Tuple[str, str]]:
+    return [(league.platform.value, league.queue.value)]
+
+
+def for_grandmaster_league_query(query: Query) -> List[Tuple[str, str]]:
+    return [(query["platform"].value, query["queue"].value)]
+
+
+def for_many_grandmaster_league_query(query: Query) -> Generator[List[Tuple[str, str]], None, None]:
     for queue in query["queues"]:
         try:
             yield [(query["platform"].value, queue.value)]
@@ -2032,7 +2010,7 @@ def for_many_match_timeline_query(query: Query) -> Generator[List[Tuple[str, int
 
 validate_current_match_query = Query. \
     has("platform").as_(Platform).also. \
-    has("summoner.id").as_(int)
+    has("summoner.id").as_(str)
 
 
 validate_many_current_match_query = Query. \
@@ -2040,18 +2018,18 @@ validate_many_current_match_query = Query. \
     has("summoner.ids").as_(Iterable)
 
 
-def for_current_match(current_match_info: CurrentMatch) -> List[Tuple[str, int]]:
+def for_current_match(current_match_info: CurrentMatch) -> List[Tuple[str, str]]:
     # Reach into the data for the summoner ids so we don't create the Summoner objects
     # This stores the current match for every summoner in the match, so if a different summoner is
     #  requested, the match isn't pulled a second time.
     return [(current_match_info.platform.value, participant._data[CurrentGameParticipantData].summonerId) for participant in current_match_info.participants] + [(current_match_info.platform.value, current_match_info.id)]
 
 
-def for_current_match_query(query: Query) -> List[Tuple[str, int]]:
+def for_current_match_query(query: Query) -> List[Tuple[str, str]]:
     return [(query["platform"].value, query["summoner.id"])]
 
 
-def for_many_current_match_query(query: Query) -> Generator[List[Tuple[str, int]], None, None]:
+def for_many_current_match_query(query: Query) -> Generator[List[Tuple[str, str]], None, None]:
     for summoner_id in query["summoner.ids"]:
         try:
             summoner_id = int(summoner_id)
@@ -2092,26 +2070,30 @@ def for_many_featured_matches_query(query: Query) -> Generator[List[str], None, 
 
 validate_summoner_query = Query. \
     has("platform").as_(Platform).also. \
-    has("id").as_(int).or_("account.id").as_(int).or_("name").as_(str)
+    has("id").as_(str).or_("accountId").as_(str).or_("name").as_(str).or_("puuid").as_(str)
 
 
 validate_many_summoner_query = Query. \
     has("platform").as_(Platform).also. \
-    has("ids").as_(Iterable).or_("accounts.id").as_(Iterable).or_("names").as_(Iterable)
+    has("ids").as_(Iterable).or_("accountIds").as_(Iterable).or_("names").as_(Iterable).or_("puuids").as_(Iterable)
 
 
 def for_summoner(summoner: Summoner) -> List[Tuple]:
     keys = []
     try:
-        keys.append((summoner.platform.value, summoner._data[SummonerData].id))
+        keys.append((summoner.platform.value, "id", summoner._data[SummonerData].id))
     except AttributeError:
         pass
     try:
-        keys.append((summoner.platform.value, summoner._data[SummonerData].name))
+        keys.append((summoner.platform.value, "name", summoner._data[SummonerData].name))
     except AttributeError:
         pass
     try:
-        keys.append((summoner.platform.value, "account", summoner._data[SummonerData].account.id))
+        keys.append((summoner.platform.value, "accountId", summoner._data[SummonerData].accountId))
+    except AttributeError:
+        pass
+    try:
+        keys.append((summoner.platform.value, "puuid", summoner._data[SummonerData].puuid))
     except AttributeError:
         pass
     return keys
@@ -2123,8 +2105,10 @@ def for_summoner_query(query: Query) -> List[Tuple]:
         keys.append((query["platform"].value, query["id"]))
     if "name" in query:
         keys.append((query["platform"].value, query["name"]))
-    if "account.id" in query:
-        keys.append((query["platform"].value, "account", query["account.id"]))
+    if "accountId" in query:
+        keys.append((query["platform"].value, "accountId", query["accountId"]))
+    if "puuid" in query:
+        keys.append((query["platform"].value, "puuid", query["puuid"]))
     return keys
 
 
@@ -2133,10 +2117,13 @@ def for_many_summoner_query(query: Query) -> Generator[List[Tuple], None, None]:
     identifier_types = []
     if "ids" in query:
         grouped_identifiers.append(query["ids"])
-        identifier_types.append(int)
-    elif "accounts.id" in query:
-        grouped_identifiers.append(query["accounts.id"])
-        identifier_types.append(int)
+        identifier_types.append(str)
+    elif "accountIds" in query:
+        grouped_identifiers.append(query["accountIds"])
+        identifier_types.append(str)
+    elif "puuids" in query:
+        grouped_identifiers.append(query["puuids"])
+        identifier_types.append(str)
     elif "names" in query:
         grouped_identifiers.append(query["names"])
         identifier_types.append(str)
