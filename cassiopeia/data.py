@@ -700,6 +700,17 @@ class Queue(Enum):
     def id(self):
         return QUEUE_IDS[self]
 
+    @property
+    def short_id(self):
+        return SHORT_IDS[self]
+
+
+SHORT_IDS = {
+    Queue.ranked_solo_fives: 'rs5',
+    Queue.ranked_flex_fives: 'rf5',
+    Queue.normal_draft_fives: 'nd5',
+    Queue.blind_fives: 'nb5'
+}
 
 QUEUE_IDS = {
     Queue.custom: 0,  # Custom games
