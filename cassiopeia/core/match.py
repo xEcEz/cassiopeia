@@ -650,21 +650,12 @@ class ParticipantTimeline(CassiopeiaObject):
         return self.events.filter(lambda event: event.type == "CHAMPION_KILL" and self.id in event.assisting_participants)
 
     @property
-    def lane(self) -> str:
+    def lane(self) -> Lane:
         return Lane.from_match_naming_scheme(self._data[ParticipantTimelineData].lane)
 
     @property
-    def role(self) -> Union[str, Role]:
-        role = self._data[ParticipantTimelineData].role
-        if role == "NONE":
-            role = None
-        elif role == "SOLO":
-            role = "SOLO"
-        elif role == "DUO":
-            role = "DUO"
-        else:
-            role = Role.from_match_naming_scheme(role)
-        return role
+    def role(self) -> Role:
+        return Role.from_match_naming_scheme(self._data[ParticipantTimelineData].role)
 
     @property
     def id(self) -> int:
@@ -1141,6 +1132,11 @@ class Participant(CassiopeiaObject):
     @load_match_on_attributeerror
     def rank_last_season(self) -> Tier:
         return Tier(self._data[ParticipantData].rankLastSeason)
+
+    @property
+    @load_match_on_attributeerror
+    def match_history_uri(self) -> str:
+        return self._data[ParticipantData].matchHistoryUri
 
     @lazy_property
     @load_match_on_attributeerror

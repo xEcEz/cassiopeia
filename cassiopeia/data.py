@@ -178,6 +178,29 @@ class RunePath(Enum):
     inspiration = "Inspiration"
     resolve = "Resolve"
 
+    @property
+    def image_url(self):
+        urls = {
+            # See, e.g., https://ddragon.leagueoflegends.com/cdn/9.1.1/data/en_US/runesReforged.json
+            "precision": "Styles/7201_Precision.png",
+            "domination": "Styles/7200_Domination.png",
+            "sorcery": "Styles/7202_Sorcery.png",
+            "inspiration": "Styles/7203_Whimsy.png",
+            "resolve": "Styles/7204_Resolve.png"
+        }
+        url = "https://ddragon.leagueoflegends.com/cdn/img/perk-images/" + urls[self.name]
+        return url
+
+    @property
+    def id(self):
+        return {
+            "precision": 8000,
+            "domination": 8100,
+            "sorcery": 8200,
+            "inspiration": 8300,
+            "resolve": 8400,
+        }[self.name]
+
 
 class Tier(Enum):
     challenger = "CHALLENGER"
@@ -588,17 +611,19 @@ class SummonersRiftArea(Enum):
 
 
 class Role(Enum):
-    top = "TOP"
-    jungle = "JUNGLE"
-    middle = "MIDDLE"
-    adc = "DUO_CARRY"
-    support = "DUO_SUPPORT"
+    duo = "DUO"
+    duo_carry = "DUO_CARRY"
+    duo_support = "DUO_SUPPORT"
     none = "NONE"
+    solo = "SOLO"
 
     def from_match_naming_scheme(string: str):
         return {
-            "DUO_CARRY": Role.adc,
-            "DUO_SUPPORT": Role.support
+            "DUO": Role.duo,
+            "DUO_CARRY": Role.duo_carry,
+            "DUO_SUPPORT": Role.duo_support,
+            "NONE": Role.none,
+            "SOLO": Role.solo
         }[string]
 
 
