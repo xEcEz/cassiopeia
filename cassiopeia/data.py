@@ -346,6 +346,7 @@ class Season(Enum):
     def id(self):
         return SEASON_IDS[self]
 
+    @staticmethod
     def from_id(id: int):
         return {i: season for season, i in SEASON_IDS.items()}[id]
 
@@ -363,6 +364,9 @@ class Season(Enum):
             if patch.season == self:
                 return patch.end
 
+    def start_timestamp(self, region):
+        return SEASON_START[self] + SHIFTS[region]
+
 
 SEASON_IDS = {
     Season.preseason_3: 0,
@@ -379,6 +383,22 @@ SEASON_IDS = {
     Season.season_8: 11,
     Season.preseason_9: 12,
     Season.season_9: 13
+}
+
+
+SEASON_START = {
+    Season.season_9: 1548316800
+}
+
+SHIFTS = {
+    Region.brazil: -3600,
+    Region.europe_north_east: -21600,
+    Region.europe_west: -10800,
+    Region.latin_america_north: 0,
+    Region.latin_america_south: 7200,
+    Region.north_america: 10800,
+    Region.turkey: -18000,
+    Region.russia: -28800,
 }
 
 
@@ -419,6 +439,24 @@ class Role(Enum):
             "DUO_SUPPORT": Role.duo_support,
             "NONE": Role.none,
             "SOLO": Role.solo
+        }[string]
+
+
+class OldRole(Enum):
+    adc = "ADC"
+    middle = "MIDDLE"
+    jungle = "JUNGLE"
+    support = "SUPPORT"
+    top = "TOP"
+    none = "NONE"
+
+    def from_ml_role(string: str):
+        return {
+            "BOTTOM_DUO_CARRY": OldRole.adc,
+            "BOTTOM_DUO_SUPPORT": OldRole.support,
+            "JUNGLE_NONE": OldRole.jungle,
+            "MIDDLE_SOLO": OldRole.middle,
+            "TOP_SOLO": OldRole.top,
         }[string]
 
 
@@ -539,7 +577,7 @@ class SummonersRiftArea(Enum):
 class Tower(Enum):
     OUTER = "OUTER_TURRET"
     INNER = "INNER_TURRET"
-    BASE  = "BASE_TURRET"
+    BASE = "BASE_TURRET"
     NEXUS = "NEXUS_TURRET"
 
 
@@ -683,8 +721,8 @@ class Queue(Enum):
 SHORT_IDS = {
     Queue.ranked_solo_fives: 'rs5',
     Queue.ranked_flex_fives: 'rf5',
-    Queue.normal_draft_fives: 'nd5',
-    Queue.blind_fives: 'nb5'
+    Queue.normal_draft_fives: 'n5',
+    Queue.blind_fives: 'n5'
 }
 
 QUEUE_IDS = {

@@ -6,7 +6,7 @@ from .cassiopeia import get_realms, get_challenger_league, get_champion_masterie
 from .cassiopeia import apply_settings, set_riot_api_key, set_default_region, print_calls
 
 from .core import Champion, Champions, Rune, Runes, Item, Items, SummonerSpell, SummonerSpells, ProfileIcon, ProfileIcons, Versions, Maps, Summoner, ChampionMastery, ChampionMasteries, Match, FeaturedMatches, ShardStatus, ChallengerLeague, GrandmasterLeague, MasterLeague, Map, Realms, LanguageStrings, Locales, LeagueEntries, League, Patch, VerificationString, MatchHistory, ChampionRotation
-from .data import Queue, Region, Platform, Resource, Side, GameMode, MasteryTree, RunePath, Tier, Division, Season, GameType, Lane, Role, Rank, Key, SummonersRiftArea, Tower, Ward, EventType, BuildingType, MonsterType, MonsterSubType
+from .data import Queue, Region, Platform, Resource, Side, GameMode, MasteryTree, RunePath, Tier, Division, Season, GameType, Lane, Role, Rank, Key, SummonersRiftArea, Tower, Ward, EventType, BuildingType, MonsterType, MonsterSubType, OldRole
 
 apply_settings(configuration.settings)
 
