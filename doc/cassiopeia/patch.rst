@@ -1,14 +1,13 @@
-.. _Realms:
+.. _Patch:
 
+Patch
+=====
 
-Realms
-======
 
 .. py:currentmodule:: cassiopeia
 
-.. automethod:: cassiopeia.get_realms
 
-.. autoclass:: Realms
+.. autoclass:: Patch
     :members:
     :undoc-members:
     :show-inheritance:

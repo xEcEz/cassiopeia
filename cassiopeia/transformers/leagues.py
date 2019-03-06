@@ -3,9 +3,9 @@ from copy import deepcopy
 
 from datapipelines import DataTransformer, PipelineContext
 
-from ..core.league import LeaguePositionData, LeaguePositionsData, LeagueEntry, LeagueEntries, LeaguesListData, LeagueListData, SummonerLeagues, League, ChallengerLeagueListData, ChallengerLeague, GrandmasterLeagueListData, GrandmasterLeague, MasterLeagueListData, MasterLeague
+from ..core.league import LeaguePositionData, LeaguePositionsData, LeagueEntry, LeagueEntries, LeaguesListData, LeagueListData, SummonerLeagues, League, ChallengerLeagueListData, ChallengerLeague, GrandmasterLeagueListData, GrandmasterLeague, MasterLeagueListData, MasterLeague, PositionalLeaguesListData, PositionalQueuesData
 
-from ..dto.league import LeaguesListDto, LeagueListDto, ChallengerLeagueListDto, GrandmasterLeagueListDto, MasterLeagueListDto, LeaguePositionDto, LeaguePositionsDto
+from ..dto.league import LeaguesListDto, LeagueListDto, ChallengerLeagueListDto, GrandmasterLeagueListDto, MasterLeagueListDto, LeaguePositionDto, LeaguePositionsDto, PositionalLeaguesListDto, PositionalQueuesDto
 
 T = TypeVar("T")
 F = TypeVar("F")
@@ -17,6 +17,10 @@ class LeagueTransformer(DataTransformer):
         pass
 
     # Dto to Data
+
+    @transform.register(PositionalQueuesDto, PositionalQueuesData)
+    def league_positional_queues_dto_to_data(self, value: PositionalQueuesDto, context: PipelineContext = None) -> PositionalQueuesData:
+        return PositionalQueuesData([queue for queue in value["queues"]], region=value["region"])
 
     @transform.register(LeaguePositionDto, LeaguePositionData)
     def league_position_dto_to_data(self, value: LeaguePositionDto, context: PipelineContext = None) -> LeaguePositionData:
@@ -45,6 +49,18 @@ class LeagueTransformer(DataTransformer):
                 entry["region"] = league["region"]
         data = [LeagueTransformer.league_list_dto_to_data(self, league) for league in data["leagues"]]
         return LeaguesListData(data, summoner_id=value["summonerId"], region=value["region"])
+
+    @transform.register(PositionalLeaguesListDto, PositionalLeaguesListData)
+    def league_positions_list_dto_to_data(self, value: PositionalLeaguesListDto, context: PipelineContext = None) -> PositionalLeaguesListData:
+        kwargs = {
+            "region": value["region"],
+            "queue": value["queue"],
+            "tier": value["tier"],
+            "division": value["division"],
+            "position": value["position"],
+            "page": value["page"]
+        }
+        return PositionalLeaguesListData([self.league_position_dto_to_data(entry) for entry in value["entries"]], **kwargs)
 
     @transform.register(ChallengerLeagueListDto, ChallengerLeagueListData)
     def challenger_league_list_dto_to_data(self, value: ChallengerLeagueListDto, context: PipelineContext = None) -> ChallengerLeagueListData:

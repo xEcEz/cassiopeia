@@ -1,3 +1,6 @@
+.. _Leagues:
+
+
 Leagues
 =======
 
@@ -7,6 +10,10 @@ Leagues
 .. py:attribute:: cassiopeia.Summoner.leagues
 
 .. automethod:: cassiopeia.get_leagues
+
+.. automethod:: cassiopeia.get_league_positions
+
+.. automethod:: cassiopeia.get_positional_leagues
 
 .. automethod:: cassiopeia.get_challenger_league
 
@@ -36,6 +43,13 @@ Leagues
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+.. autoclass:: cassiopeia.core.league.PositionalLeagues
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
 
 
 .. autoclass:: cassiopeia.core.league.MiniSeries

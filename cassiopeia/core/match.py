@@ -878,7 +878,7 @@ class _ItemState:
         try:
             self._items.remove(item)
         except ValueError as error:
-            if item in (3340, 3364):  # Something weird can happen with trinkets???
+            if item in (3340, 3364, 2319, 2061, 2062, 2056, 2403, 2419, 3400, 2004, 2058, 3200, 2011, 2423, 2055, 2057, 2424, 2059, 2060, 2013, 2421, 3600):  # Something weird can happen with trinkets and klepto items
                 pass
             else:
                 raise error
@@ -1309,10 +1309,20 @@ class Participant(CassiopeiaObject):
 
     @lazy_property
     @load_match_on_attributeerror
-    def runes(self) -> Dict["Rune", int]:
+    def runes(self) -> Dict[Rune, int]:
         version = _choose_staticdata_version(self.__match)
-        return SearchableDictionary({Rune(id=rune_id, version=version, region=self.__match.region): perk_vars
+        runes = SearchableDictionary({Rune(id=rune_id, version=version, region=self.__match.region): perk_vars
             for rune_id, perk_vars in self._data[ParticipantData].runes.items()})
+
+        def keystone(self):
+            for rune in self:
+                if rune.is_keystone:
+                    return rune
+        # The bad thing about calling this here is that the runes won't be lazy loaded, so if the user only want the
+        #  rune ids then there will be a needless call. That said, it's pretty nice functionality to have and without
+        #  making a custom RunePage class, I believe this is the only option.
+        runes.keystone = keystone(runes)
+        return runes
 
     @lazy_property
     @load_match_on_attributeerror
@@ -1397,7 +1407,7 @@ class Participant(CassiopeiaObject):
             return self.__match.blue_team
 
 
-@searchable({str: ["participants"], bool: ["win"]})
+@searchable({str: ["participants"], bool: ["win"], Champion: ["participants"], Summoner: ["participants"], SummonerSpell: ["participants"]})
 class Team(CassiopeiaObject):
     _data_types = {TeamData}
 
@@ -1477,7 +1487,7 @@ class Team(CassiopeiaObject):
         return SearchableList([Participant.from_data(p, match=self.__match) for p in self._data[TeamData].participants])
 
 
-@searchable({str: ["participants", "region", "platform", "season", "queue", "mode", "map", "type"], Region: ["region"], Platform: ["platform"], Season: ["season"], Queue: ["queue"], GameMode: ["mode"], Map: ["map"], GameType: ["type"], Item: ["participants"], Champion: ["participants"], Patch: ["patch"]})
+@searchable({str: ["participants", "region", "platform", "season", "queue", "mode", "map", "type"], Region: ["region"], Platform: ["platform"], Season: ["season"], Queue: ["queue"], GameMode: ["mode"], Map: ["map"], GameType: ["type"], Item: ["participants"], Champion: ["participants"], Patch: ["patch"], Summoner: ["participants"], SummonerSpell: ["participants"]})
 class Match(CassiopeiaGhost):
     _data_types = {MatchData}
 
@@ -1618,8 +1628,12 @@ class Match(CassiopeiaGhost):
 
     @property
     def patch(self) -> Patch:
-        version = ".".join(self.version.split(".")[:2])
-        patch = Patch.from_str(version, region=self.region)
+        if hasattr(self._data[MatchData], "version"):
+            version = ".".join(self.version.split(".")[:2])
+            patch = Patch.from_str(version, region=self.region)
+        else:
+            date = self.creation
+            patch = Patch.from_date(date, region=self.region)
         return patch
 
     @CassiopeiaGhost.property(MatchData)

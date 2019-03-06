@@ -42,6 +42,7 @@ See the links below for the method and class names for each type.
     locale.rst
     map.rst
     match.rst
+    patch.rst
     profileicon.rst
     realms.rst
     rune.rst
