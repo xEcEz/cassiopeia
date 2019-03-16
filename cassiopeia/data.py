@@ -183,11 +183,12 @@ class Tier(Enum):
     iron = "IRON"
     provisional = "PROVISIONAL"
     unranked = "UNRANKED"
+    none = "NONE"
 
     @classmethod
     def from_int(cls, value):
-        if value in range(0, 8):
-            return cls(cls._inverted_order()[value])
+        if value in range(1, 10):
+            return cls._inverted_order()[value]
         else:
             raise ValueError('Corresponding tier does not exist')
 
@@ -202,8 +203,13 @@ class Tier(Enum):
 
     @staticmethod
     def _inverted_order():
-        return {7: Tier.challenger, 6: Tier.master, 5: Tier.diamond,
-                4: Tier.platinum, 3: Tier.gold, 2: Tier.silver, 1: Tier.bronze}
+        return {9: Tier.challenger, 8: Tier.grandmaster, 7: Tier.master, 6: Tier.diamond,
+                5: Tier.platinum, 4: Tier.gold, 3: Tier.silver, 2: Tier.bronze, 1: Tier.iron}
+
+    @staticmethod
+    def valid_tiers():
+        return [Tier.iron, Tier.bronze, Tier.silver, Tier.gold, Tier.platinum, Tier.diamond, Tier.master,
+                Tier.grandmaster, Tier.challenger]
 
     def __lt__(self, other):
         return self._order()[self] < other._order()[other]
@@ -354,7 +360,6 @@ SEASON_IDS = {
     Season.season_9: 13
 }
 
-
 SEASON_START = {
     Season.season_9: 1548316800
 }
@@ -428,7 +433,7 @@ class OldRole(Enum):
             "TOP_SOLO": OldRole.top,
         }[string]
 
-        
+
 class Position(Enum):
     top = "TOP"
     middle = "MIDDLE"
@@ -438,6 +443,7 @@ class Position(Enum):
     apex = "APEX"
     none = "NONE"
 
+    @staticmethod
     def from_league_naming_scheme(string: str):
         return {
             "TOP": Position.top,
@@ -447,6 +453,10 @@ class Position(Enum):
             "UTILITY": Position.support,
             "NONE": Position.none
         }
+
+    @staticmethod
+    def get_positional_ranks():
+        return [Position.top, Position.middle, Position.jungle, Position.bottom, Position.utility]
 
 
 class SummonersRiftArea(Enum):
@@ -559,7 +569,7 @@ class SummonersRiftArea(Enum):
         x_pos = round(
             (x - SummonersRiftArea.__min_x) / SummonersRiftArea.__width * (SummonersRiftArea.__pos_granularity - 1))
         y_pos = round(abs(y - SummonersRiftArea.__min_y - SummonersRiftArea.__height) / SummonersRiftArea.__height * (
-                    SummonersRiftArea.__pos_granularity - 1))
+                SummonersRiftArea.__pos_granularity - 1))
         return {'x': x_pos, 'y': y_pos}
 
 
@@ -603,6 +613,7 @@ class MonsterSubType(Enum):
     fire_dragon = "FIRE_DRAGON"
     water_dragon = "WATER_DRAGON"
     elder_dragon = "ELDER_DRAGON"
+
 
 # References for Queues:
 # https://developer.riotgames.com/game-constants.html
@@ -687,7 +698,7 @@ class Queue(Enum):
     guardian_invasion_onslaught = "INVASION_ONSLAUGHT"  # 990
     overcharge = "OVERCHARGE"  # 1000
     all_random_urf_snow = "SNOWURF"  # 1010
-    one_for_all_rapid = "ONEFORALL_RAPID_5x5" # 1020
+    one_for_all_rapid = "ONEFORALL_RAPID_5x5"  # 1020
     odyssey_intro = "ODYSSEY_INTRO"  # 1030
     odyssey_cadet = "ODYSSEY_CADET"  # 1040
     odyssey_crewmember = "ODYSSEY_CREWMEMBER"  # 1050
@@ -797,7 +808,7 @@ QUEUE_IDS = {
     Queue.guardian_invasion_onslaught: 990,  # Valoran City Park    Star Guardian Invasion: Onslaught games
     Queue.overcharge: 1000,  # Overcharge, PROJECT: Hunters games
     Queue.all_random_urf_snow: 1010,  # Summoner's Rift, Snow ARURF games
-    Queue.one_for_all_rapid: 1020, # Summoner's Rift  One for All games (increased gold and exp gain)
+    Queue.one_for_all_rapid: 1020,  # Summoner's Rift  One for All games (increased gold and exp gain)
     Queue.odyssey_intro: 1030,  # Odyssey: Extraction
     Queue.odyssey_cadet: 1040,  # Odyssey: Extraction
     Queue.odyssey_crewmember: 1050,  # Odyssey: Extraction
