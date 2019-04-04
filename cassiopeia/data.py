@@ -433,6 +433,10 @@ class OldRole(Enum):
             "TOP_SOLO": OldRole.top,
         }[string]
 
+    @staticmethod
+    def valid_roles():
+        return [OldRole.adc, OldRole.middle, OldRole.jungle, OldRole.support, OldRole.top]
+
 
 class Position(Enum):
     top = "TOP"
