@@ -214,7 +214,7 @@ class MatchData(CoreData):
                 for pid in kwargs["participantIdentities"]:
                     if participant["participantId"] == pid["participantId"] and "player" in pid:
                         good_participant_ids.append(participant["participantId"])
-                        participant["player"] =  pid["player"]
+                        participant["player"] = pid["player"]
                         break
             # For each participant id we found that has both a participant and an identity, add it to the match data's participants
             self.participants = []
@@ -1624,6 +1624,8 @@ class Match(CassiopeiaGhost):
     @CassiopeiaGhost.property(MatchData)
     @ghost_load_on
     def version(self) -> str:
+        # if self._data[MatchData].version == '9.7.269.2391':
+        #     return '9.6.1'
         return self._data[MatchData].version
 
     @property

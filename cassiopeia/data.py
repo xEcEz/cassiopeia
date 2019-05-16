@@ -192,6 +192,13 @@ class Tier(Enum):
         else:
             raise ValueError('Corresponding tier does not exist')
 
+    @classmethod
+    def int_from_name(cls, name):
+        if name in Tier.valid_tier_names():
+            return cls._name_order()[name]
+        else:
+            raise ValueError('Corresponding tier does not exist')
+
     def __str__(self):
         return self.name.title()
 
@@ -210,6 +217,17 @@ class Tier(Enum):
     def valid_tiers():
         return [Tier.iron, Tier.bronze, Tier.silver, Tier.gold, Tier.platinum, Tier.diamond, Tier.master,
                 Tier.grandmaster, Tier.challenger]
+
+    @staticmethod
+    def valid_tier_names():
+        return [Tier.iron.name, Tier.bronze.name, Tier.silver.name, Tier.gold.name, Tier.platinum.name, Tier.diamond.name,
+                Tier.master.name, Tier.grandmaster.name, Tier.challenger.name]
+
+    @staticmethod
+    def _name_order():
+        return {Tier.challenger.name: 9, Tier.grandmaster.name: 8, Tier.master.name: 7,
+                Tier.diamond.name: 6, Tier.platinum.name: 5, Tier.gold.name: 4,
+                Tier.silver.name: 3, Tier.bronze.name: 2, Tier.iron.name: 1}
 
     def __lt__(self, other):
         return self._order()[self] < other._order()[other]
