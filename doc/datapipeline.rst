@@ -87,7 +87,7 @@ It takes one optional parameter (called ``expirations``), which is a mapping of 
     ProfileIcons: datetime.timedelta(days=20),
     ChampionMastery: datetime.timedelta(days=7),
     ChampionMasteries: datetime.timedelta(days=7),
-    LeagueEntries: datetime.timedelta(hours=6),
+    LeagueSummonerEntries: datetime.timedelta(hours=6),
     League: datetime.timedelta(hours=6),
     ChallengerLeague: datetime.timedelta(hours=6),
     MasterLeague: datetime.timedelta(hours=6),
@@ -117,6 +117,27 @@ Riot API
 Hopefully you already know what this is. It's where you're planning on getting your data, and it's a data source. It should come after your data bases, and will likely always be the last thing in your data pipeline.
 
 This component can have complicated settings, so see :ref:`settings` for its parameters.
+
+Kernel
+""""""
+
+Cassiopeia can query a proxy server that mirrors Riot API endpoints. An example of such server is `Kernel <https://github.com/meraki-analytics/kernel>`_.
+
+To configure the address and ports of the proxy, use the following configuration within your pipeline:
+
+.. code-block:: json
+
+    {
+      "pipeline": {
+        ...,
+        "Kernel": {
+          "server_url": "http://localhost",
+          "port": 80
+        }
+        ...
+      }
+    }
+
 
 Simple Disk Database
 """"""""""""""""""""

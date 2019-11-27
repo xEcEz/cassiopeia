@@ -1,4 +1,4 @@
-from typing import List, Union, Optional, Generator
+from typing import List, Union, Optional, Generator, Set, Type
 
 from merakicommons.cache import lazy_property, lazy
 from merakicommons.container import searchable, SearchableList
@@ -49,7 +49,7 @@ class LeagueData(CoreData):
 class LeagueSummonerEntriesData(CoreDataList):
     """League entries for a single summoner."""
     _dto_type = LeagueSummonerEntriesDto
-    _renamed = {}
+    _renamed = {"summonerId": "summoner_id"}
 
 
 class LeagueEntriesData(CoreDataList):
@@ -144,6 +144,12 @@ class LeagueEntry(CassiopeiaGhost):
 
     __hash__ = CassiopeiaGhost.__hash__
 
+    @classmethod
+    def from_data(cls, data: LeagueEntryData, loaded_groups: Optional[Set[Type[CoreData]]] = None, league: "League" = None):
+        self = super().from_data(data=data, loaded_groups=loaded_groups)
+        self.__league = league
+        return self
+
     @lazy_property
     def region(self) -> Region:
         """The region for this champion."""
@@ -154,17 +160,12 @@ class LeagueEntry(CassiopeiaGhost):
         """The platform for this champion."""
         return self.region.platform
 
-    @property
-    def league_id(self) -> str:
-        return self._data[LeagueEntryData].leagueId
-
     @lazy_property
     def queue(self) -> Queue:
-        return Queue(self._data[LeagueEntryData].queue)
-
-    @property
-    def name(self) -> str:
-        return self._data[LeagueEntryData].name
+        try:
+            return Queue(self._data[LeagueEntryData].queue)
+        except AttributeError:
+            return self.league.queue
 
     @lazy_property
     def tier(self) -> Tier:
@@ -211,7 +212,7 @@ class LeagueEntry(CassiopeiaGhost):
 
     @lazy_property
     def league(self) -> "League":
-        return League(id=self.league_id, region=self.region)
+        return self.__league or League(id=self._data[LeagueEntryData].leagueId, region=self.region)
 
     @property
     def league_points(self) -> int:
@@ -274,14 +275,12 @@ class LeagueEntries(CassiopeiaLazyList):  # type List[LeagueEntry]
 class LeagueSummonerEntries(CassiopeiaLazyList):
     _data_types = {LeagueSummonerEntriesData}
 
-    @provide_default_region
     def __init__(self, *, summoner: Summoner):
         self.__summoner = summoner
         kwargs = {"region": summoner.region}
         CassiopeiaObject.__init__(self, **kwargs)
 
     @classmethod
-    @provide_default_region
     def __get_query_from_kwargs__(cls, *, summoner: Union[Summoner, str]) -> dict:
         query = {"region": summoner.region}
         if isinstance(summoner, Summoner):
@@ -296,7 +295,7 @@ class LeagueSummonerEntries(CassiopeiaLazyList):
 
     @lazy_property
     def region(self) -> Region:
-        return Region(self._data[LeagueEntriesData].region)
+        return Region(self._data[LeagueSummonerEntriesData].region)
 
     @lazy_property
     def platform(self) -> Platform:
@@ -328,12 +327,12 @@ class LeagueSummonerEntries(CassiopeiaLazyList):
 class League(CassiopeiaGhost):
     _data_types = {LeagueData}
 
-    def __init__(self, id: str = None, region: Union[Region, str] = None):
+    def __init__(self, id: str = None, queue: Queue = None, region: Union[Region, str] = None):
         if region is None:
             region = configuration.settings.default_region
         if region is not None and not isinstance(region, Region):
             region = Region(region)
-        kwargs = {"id": id, "region": region}
+        kwargs = {"id": id, "region": region, "queue": queue}
         super().__init__(**kwargs)
 
     def __get_query__(self):
@@ -393,7 +392,12 @@ class League(CassiopeiaGhost):
     @ghost_load_on
     @lazy
     def entries(self) -> List[LeagueEntry]:
-        return SearchableList([LeagueEntry.from_data(entry) for entry in self._data[LeagueData].entries])
+        entries = []
+        for entry in self._data[LeagueData].entries:
+            entry.leagueId = self.id
+            entry = LeagueEntry.from_data(data=entry, loaded_groups={LeagueEntriesData})
+            entries.append(entry)
+        return SearchableList(entries)
 
 
 class ChallengerLeague(League):

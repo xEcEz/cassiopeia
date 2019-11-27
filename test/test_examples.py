@@ -125,39 +125,30 @@ def test_languagestrings():
     assert len(language_strings.strings) > 0
 
 def test_leagues():
-    summoner_name = "Spartan324"
+    summoner_name = "Kalturi"
     region = "NA"
     summoner = Summoner(name=summoner_name, region=region)
     "Name:", summoner.name
     "ID:", summoner.id
 
-    # positions = cass.get_league_positions(summoner, region=region)
-    positions = summoner.league_positions
-    if positions.fives.promos is not None:
+    # entries = cass.get_league_entries(summoner, region=region)
+    entries = summoner.league_entries
+    if entries.fives.promos is not None:
         # If the summoner is in their promos, print some info
-        "Promos progress:", positions.fives.promos.progress
-        "Promos wins", positions.fives.promos.wins
-        "Promos losses:", positions.fives.promos.losses
-        "Games not yet played in promos:", positions.fives.promos.not_played
-        "Number of wins required to win promos:", positions.fives.promos.wins_required
+        "Promos progress:", entries.fives.promos.progress
+        "Promos wins", entries.fives.promos.wins
+        "Promos losses:", entries.fives.promos.losses
+        "Games not yet played in promos:", entries.fives.promos.not_played
+        "Number of wins required to win promos:", entries.fives.promos.wins_required
     else:
         "The summoner is not in their promos."
 
-    "Name and id of leagues this summoner is in:"
-    for league in positions:
-        league.name
-        league.league_id
-
-    leagues = cass.get_leagues(summoner)
-    leagues = summoner.leagues
-    "Name of leagues this summoner is in (called from a different endpoint):"
-    for league in leagues:
-        #league.name
-        league.id
-
-    f"Listing all summoners in {leagues.fives.id}"
-    for entry in leagues.fives:
-        entry.summoner.name, entry.league_points, leagues.fives.tier, entry.division
+    "Name and id of fives leagues this summoner is in:"
+    entries.fives.league.name
+    entries.fives.league.id
+    f"Listing all summoners in {entries.fives.league.id}"
+    for entry in entries.fives.league.entries:
+        entry.summoner.name, entry.league_points, entries.fives.league.tier, entry.division
 
     "Challenger League name and id:"
     challenger = cass.get_challenger_league(queue=Queue.ranked_solo_fives, region=region)
@@ -252,14 +243,6 @@ def test_summoner():
     "Profile icon image:", summoner.profile_icon.image
 
 
-def test_verification_string():
-    summoner = Summoner(name="Kalturi", region="NA")
-    vs1 = summoner.verification_string
-    vs = VerificationString(summoner=summoner, region="NA")
-    vs2 = vs.string
-    assert vs1 == vs2
-
-
 def test_summonerspells():
     sspells = cass.get_summoner_spells(region="NA")
     for sspell in sspells:
@@ -287,27 +270,3 @@ def test_timeline():
     for p in match.participants:
         for event in p.timeline.events:
             event.type
-
-
-def test_championgg():
-    if not "CHAMPIONGG_KEY" in os.environ:
-        pytest.xfail("No championgg key provided")
-    syndra = Champion(name="Syndra", region="NA")
-    syndra.name
-    syndra.championgg[Role.middle].win_rate
-    syndra.championgg[Role.middle].play_rate
-    syndra.championgg[Role.middle].play_rate_by_role
-    syndra.championgg[Role.middle].ban_rate
-    syndra.championgg[Role.middle].games_played
-    syndra.championgg[Role.middle].damage_composition
-    syndra.championgg[Role.middle].kills
-    syndra.championgg[Role.middle].total_damage_taken
-    syndra.championgg[Role.middle].neutral_minions_killed_in_team_jungle
-    syndra.championgg[Role.middle].assists
-    syndra.championgg[Role.middle].neutral_minions_killed_in_enemy_jungle
-    syndra.championgg[Role.middle].gold_earned
-    syndra.championgg[Role.middle].deaths
-    syndra.championgg[Role.middle].minions_killed
-    syndra.championgg[Role.middle].total_healed
-    syndra.championgg[Role.middle].championgg_metadata["elo"]
-    syndra.championgg[Role.middle].championgg_metadata["patch"]
