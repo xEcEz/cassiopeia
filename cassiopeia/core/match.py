@@ -1506,7 +1506,7 @@ class Match(CassiopeiaGhost):
         instance = cls(id=ref.id, region=ref.region)
         # The below line is necessary because it's possible to pull this match from the cache (which has Match core objects in it).
         # In that case, the data will already be loaded and we don't want to overwrite anything.
-        if not hasattr(instance._data[MatchData], "participants"):
+        if not hasattr(instance._data[MatchData], "participants") and hasattr(ref, 'championId'):
             participant = {"participantId": None, "championId": ref.championId, "timeline": {"lane": ref.lane, "role": ref.role}}
             player = {"participantId": None, "currentAccountId": ref.accountId, "currentPlatformId": ref.platform}
             instance(season=ref.season, queue=ref.queue, creation=ref.creation)

@@ -55,6 +55,7 @@ def create_pipeline(service_configs: Dict, verbose: int = 0) -> DataPipeline:
 
     services.append(MerakiAnalyticsCDN())
     services.append(LolWikia())
+    # services.append(GoogleCloudStorage())
     pipeline = DataPipeline(services, transformers)
 
     # Manually put the cache on the pipeline.
@@ -156,7 +157,7 @@ class Settings(object):
     @property
     def pipeline(self) -> DataPipeline:
         if self.__pipeline is None:
-            self.__pipeline = create_pipeline(service_configs=self.__pipeline_args, verbose=0)
+            self.__pipeline = create_pipeline(service_configs=self.__pipeline_args, verbose=2)
         return self.__pipeline
 
     @property

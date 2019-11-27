@@ -299,7 +299,7 @@ class RiotAPIRequest(object):
                     new_handler = self.service._handlers[error.code]()
                 except KeyError:
                     new_handler = None
-                    print('error: unexpected response code')
+                    print(f'error: unexpected response code {error.code}')
 
             # If we will handle the new error in the same way as we did previously, don't use a new instance
             for handler in handlers:

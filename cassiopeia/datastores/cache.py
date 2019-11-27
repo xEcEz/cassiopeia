@@ -789,6 +789,7 @@ class Cache(DataSource, DataSink):
 
     @put.register(Match)
     def put_match(self, item: Match, context: PipelineContext = None) -> None:
+        print('cache put match')
         self._put(Match, item, uniquekeys.for_match, context=context)
 
     @put_many.register(Match)

@@ -442,13 +442,14 @@ class OldRole(Enum):
     top = "TOP"
     none = "NONE"
 
+    @staticmethod
     def from_ml_role(string: str):
         return {
-            "BOTTOM_DUO_CARRY": OldRole.adc,
-            "BOTTOM_DUO_SUPPORT": OldRole.support,
-            "JUNGLE_NONE": OldRole.jungle,
-            "MIDDLE_SOLO": OldRole.middle,
-            "TOP_SOLO": OldRole.top,
+            "bot": OldRole.adc,
+            "supp": OldRole.support,
+            "jungle": OldRole.jungle,
+            "mid": OldRole.middle,
+            "top": OldRole.top,
         }[string]
 
     @staticmethod
@@ -726,6 +727,8 @@ class Queue(Enum):
     odyssey_crewmember = "ODYSSEY_CREWMEMBER"  # 1050
     odyssey_captain = "ODYSSEY_CAPTAIN"  # 1060
     odyssey_onslaught = "ODYSSEY_ONSLAUGHT"  # 1070
+    tft = "TFT" # 1090
+    ranked_tft = "RANKED_TFT" # 1100
     nexus_blitz = "NEXUS_BLITZ"  # 1200
 
     def from_id(id: int):
@@ -836,6 +839,8 @@ QUEUE_IDS = {
     Queue.odyssey_crewmember: 1050,  # Odyssey: Extraction
     Queue.odyssey_captain: 1060,  # Odyssey: Extraction
     Queue.odyssey_onslaught: 1070,  # Odyssey: Extraction
+    Queue.tft: 1090, # Teamfight Tactics
+    Queue.ranked_tft: 1100, # Ranked Teamfight Tactics
     Queue.nexus_blitz: 1200,  # Nexus Blitz map    Nexus Blitz
 }
 
@@ -851,4 +856,5 @@ RANKED_QUEUES = {
     Queue.ranked_solo_fives,  # Summoner's Rift    5v5 Ranked Solo games
     Queue.ranked_flex_fives,  # Summoner's Rift    5v5 Ranked Flex games
     Queue.ranked_flex_threes,  # Twisted Treeline    3v3 Ranked Flex games
+    # Queue.ranked_tft,   # Ranked Teamfight Tactics
 }
