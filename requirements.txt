@@ -5,3 +5,5 @@ datapipelines>=1.0.7
 Pillow
 arrow
 requests
+redis
+redis_rate_limit
