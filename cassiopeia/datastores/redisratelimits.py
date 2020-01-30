@@ -21,39 +21,39 @@ class RedisFixedWindowRateLimiter(RateLimiter):
         else:
             self._redis_pool = ConnectionPool(host=self._host, port=self._port, db=self._db)
 
-        print(
-            f'{self._store_key}: init with {self._window_permits} per {self._window_seconds}s on {self._host}:'
-            f'{self._port}')
+        # print(
+        #     f'{self._store_key}: init with {self._window_permits} per {self._window_seconds}s on {self._host}:'
+        #     f'{self._port}')
 
         self._permitter = RateLimit(resource=self._store_key, client=self._host, max_requests=self._window_permits,
                                     redis_pool=self._redis_pool)
 
     def __enter__(self) -> "RedisFixedWindowRateLimiter":
-        print(f'{self._store_key}: __enter__')
+        # print(f'{self._store_key}: __enter__')
         while True:
             try:
-                print(f'{self._store_key}: current usage: {self._permitter.get_usage()}')
+                # print(f'{self._store_key}: current usage: {self._permitter.get_usage()}')
                 with self._permitter:
-                    print(f'{self._store_key}: acquired!')
+                    # print(f'{self._store_key}: acquired!')
                     return self
             except TooManyRequests:
                 sl = self._permitter.get_wait_time()
-                print(f'{self._store_key}: sleeping {sl}')
+                # print(f'{self._store_key}: sleeping {sl}')
                 sleep(sl)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        print(f'{self._store_key}: __exit__')
+        # print(f'{self._store_key}: __exit__')
         pass
 
     def set_permits(self, permits: int) -> None:
-        print(f'{self._store_key}: __exit__')
+        # print(f'{self._store_key}: __exit__')
         pass
 
     @property
     def permits_issued(self) -> int:
-        print(f'{self._store_key}: permits_issued')
+        # print(f'{self._store_key}: permits_issued')
         pass
 
     def reset_permits_issued(self) -> None:
-        print(f'{self._store_key}: reset_permits_issued')
+        # print(f'{self._store_key}: reset_permits_issued')
         pass

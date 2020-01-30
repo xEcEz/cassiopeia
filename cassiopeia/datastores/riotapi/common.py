@@ -72,7 +72,6 @@ class RiotAPIRateLimiter(MultiRateLimiter):
             limiter.restrict_for(seconds)
 
     def _construct_limiters(self, limits: List[List[int]]):
-        print(limits)
         # Creates the necessary FixedWindowRateLimiters from the rates in the headers
         assert len(self._limiters) == 0
         # Create the rate limiters
